@@ -1,0 +1,1 @@
+cmd_/home/nitin/thesis/modules/user_process_call_test.ko := ld -r -m elf_x86_64 -T /home/nitin/thesis/linux/scripts/module-common.lds --build-id  -o /home/nitin/thesis/modules/user_process_call_test.ko /home/nitin/thesis/modules/user_process_call_test.o /home/nitin/thesis/modules/user_process_call_test.mod.o

@@ -3,164 +3,7 @@
 #include <linux/syscalls.h>
 #include <linux/delay.h>
 #include <asm/paravirt.h>
-#include <linux/fs.h>
-#include <asm/segment.h>
-#include <asm/uaccess.h>
-#include <linux/buffer_head.h>
-#include <linux/sched.h>
-#include <linux/fdtable.h>
-#include "interceptor.h"
-#include <linux/list.h>
-
-
-//TRIED to implement my own list data structure but now I got to that the kernel has its own list thing so I will use that :P
-
-//Adding a structure here to store the list of the current SIDs that are active
-struct sid_list{
-	struct list_head my_list;
-	char * sid;
-};
-//list of the current sids active in the system at this point
-
-void add_sid_to_list(char * input){
-	struct sid_list elem = {
-		.sid  = input,
-		.my_list = LIST_HEAD_INIT(element.my_list)
-		};
-	list_add(&elem.my_list , &sid_linked_list);	
-}
-void remove_sid_from_list(char * input){
-	struct sid_list *ptr  = NULL;
-	int flag = 0;
-	list_for_each_entry(ptr , &sid_linked_list , my_list){
-		if(strcmp(ptr->sid , input) == 0) {
-			flag = 1;
-			break;
-		}
-	list_del(ptr);
-	if(flag){
-		kfree(ptr -> sid);
-		kfree(ptr);
-	}
-
-}
-int check_sid_in_list(char * input){
-	struct sid_list *ptr  = NULL;
-	//int flag = 0;
-	list_for_each_entry(ptr , &sid_linked_list , my_list){
-		if(strcmp(ptr->sid , input) == 0) {
-			return 1;
-		}
-	return 0;
-}
-/*
-//adding an sid to the
-void add_sid_to_list(struct sid_list * input){
-	if(c_list_head == NULL){
-		c_list_head = input;
-	}
-	else{
-		struct sid_list * temp = c_list_head;
-		while(temp->next != NULL){
-			temp = temp->next;
-		}
-		temp->next = input; //assign the node as tha last node
-	}
-}
-void remove_sid_from_list(struct sid_list * input){
-	if(c_list_head == NULL){
-		return;
-	}else{
-		struct sid_list * temp = c_list_head;
-		while(temp != NULL and temp->next != input){
-			if (temp->next == input){
-				temp->next = input->next;
-				free_sid_list_memory(input);
-			} 
-
-		}
-
-
-	}
-}
-void free_sid_list_memory(struct sid_list * input){
-	if(input != NULL){
-	kfree(input->sid);
-	kfree(input);
-	}
-}
-struct sid_list * create_sid_list_node(char * input){
-	struct sid_list * new_node = kmalloc(sizeof(sid_list));
-	new_node->next = NULL;
-	new_node->sid = input;
-
-	return new_node;
-}
-
-EXPORT_SYMBOL(sid_list);
-EXPORT_SYMBOL(c_list_head);
-EXPORT_SYMBOL(add_sid_to_list);
-EXPORT_SYMBOL(remove_sid_from_list);
-EXPORT_SYMBOL(create_sid_list_node);
-*/
-//************The below functions are just to read the proc in an lkm
-
-/*struct file* file_open(const char* path, int flags, int rights) {
-    struct file* filp = NULL;
-    mm_segment_t oldfs;
-    int err = 0;
-
-    oldfs = get_fs();
-    set_fs(get_ds());
-    filp = filp_open(path, flags, rights);
-    set_fs(oldfs);
-    if(IS_ERR(filp)) {
-        err = PTR_ERR(filp);
-        return NULL;
-    }
-    return filp;
-}
-
-void file_close(struct file* file) {
-    filp_close(file, NULL);
-}
-
-int file_write(struct file* file, unsigned long long offset, unsigned char* data, unsigned int size) {
-    mm_segment_t oldfs;
-    int ret;
-
-    oldfs = get_fs();
-    set_fs(get_ds());
-
-    ret = vfs_write(file, data, size, &offset);
-
-    set_fs(oldfs);
-    return ret;
-}
-
-int file_read(struct file* file, unsigned long long offset, unsigned char* data, unsigned int size) {
-    mm_segment_t oldfs;
-    int ret;
-
-    oldfs = get_fs();
-    set_fs(get_ds());
-
-    ret = vfs_read(file, data, size, &offset);
-
-    set_fs(oldfs);
-    return ret;
-} 
-*/
-//***************************************************************************
 //#include <unistd.h>
-
-
-//*************************************************************************************************************
-//Code for reading/writing a proc file
-
-
-//
-//*************************************************************************************************************
 unsigned long **sys_call_table;
 unsigned long original_cr0;
 
@@ -169,10 +12,10 @@ asmlinkage long (*ref_sys_read)(unsigned int fd, char __user *buf, size_t count)
 asmlinkage long (*ref_sys_write)(unsigned int fd, char __user *buf, size_t count); //2
 asmlinkage long (*ref_sys_open)(const char* filename, int flags, int mode); //3
 asmlinkage long (*ref_sys_close)(unsigned int fd); //4
-asmlinkage long (*ref_sys_link)(const char * oldname, const char * newname); //5
-asmlinkage long (*ref_sys_unlink)(const char  * pathname); //6
-asmlinkage long (*ref_sys_chdir)(const char * filename); //7
-/*asmlinkage long (*ref_sys_mknod)(unsigned int fd, char __user *buf, size_t count); //8
+/*asmlinkage long (*ref_sys_link)(unsigned int fd, char __user *buf, size_t count); //5
+asmlinkage long (*ref_sys_unlink)(unsigned int fd, char __user *buf, size_t count); //6
+asmlinkage long (*ref_sys_chdir)(unsigned int fd, char __user *buf, size_t count); //7
+asmlinkage long (*ref_sys_mknod)(unsigned int fd, char __user *buf, size_t count); //8
 asmlinkage long (*ref_sys_lchown)(unsigned int fd, char __user *buf, size_t count); //9
 asmlinkage long (*ref_sys_lseek)(unsigned int fd, char __user *buf, size_t count); //10
 asmlinkage long (*ref_sys_mount)(unsigned int fd, char __user *buf, size_t count); //11
@@ -207,22 +50,23 @@ asmlinkage long (*ref_sys_readlink)(const char* pathname, char* buf, size_t bufs
 asmlinkage long new_sys_read(unsigned int fd, char __user *buf, size_t count)
 {
 		long ret;
-		struct file *file;
-		char fbuf[200], *realpath;
 		ret = ref_sys_read(fd, buf, count);
+		char fileName[400];
+		char procFileName[40];
+		char executableName[50];	
+		int process_id = (int) ref_sys_getpid();
+		sprintf(procFileName, "/proc/%d/cmdline", process_id);
+		int flocal = ref_sys_open(procFileName, O_RDONLY , 'r');
+		int charsRead = ref_sys_read(flocal, executableName,49);
+		executableName[charsRead] = '\0';
+		ref_sys_close(flocal);
+		sprintf(procFileName, "/proc/%d/fd/%d", process_id, (int)fd);
+		int filenameLength = ref_sys_readlink(procFileName, fileName,399);
+		fileName[filenameLength] ='\0';	
 		
-		if (strcmp(current->comm , "rsyslogd") == 0 || strcmp(current->comm , "in:imklog") == 0 )
-			return ret;
-		
-		file = fcheck(fd);
-		if(!file){
-			printk(KERN_INFO "thesis_log|||sys_call_name=sys_read|||process_id=%d|||executable=%s\n", current->pid , current->comm);
-			return ret;
-		}
-		const struct path f_path = file->f_path;
-		realpath = d_path(&f_path, fbuf, 200);
-		printk(KERN_INFO "thesis_log|||sys_call_name=sys_read|||process_id=%d|||executable=%s|||file_written=%s\n", current->pid , current->comm , realpath);
-	    return ret;
+		if(process_id > 1023)	
+		printk(KERN_INFO "thesis_log|||sys_call_name=sys_read|||process_id=%d|||executable=%s|||file_read=%s\n", (int) process_id,executableName, fileName);
+		return ret;
 }
 
 //2
@@ -230,32 +74,31 @@ asmlinkage long new_sys_write(unsigned int fd, char __user *buf, size_t count)
 {
 		long ret;
 		ret = ref_sys_write(fd, buf, count);
-		struct file *file;
-		char fbuf[200], *realpath;
-		if (strcmp(current->comm , "rsyslogd") == 0 || strcmp(current->comm , "in:imklog") == 0 )
-			return ret;
-		file = fcheck(fd);
-		if(!file){
-			printk(KERN_INFO "thesis_log|||sys_call_name=sys_write|||process_id=%d|||executable=%s\n", current->pid , current->comm);
-			return ret;
-		}
-		const struct path f_path = file->f_path;
-		realpath = d_path(&f_path, fbuf, 200);
-		printk(KERN_INFO "thesis_log|||sys_call_name=sys_write|||process_id=%d|||executable=%s|||file_written=%s\n", current->pid, current->comm,  realpath);
+		char fileName[400];
+		char procFileName[40];
+		int process_id = (int) ref_sys_getpid();
+		sprintf(procFileName, "/proc/%d/fd/%d", process_id, (int)fd);
+		int filenameLength = ref_sys_readlink(procFileName, fileName,399);
+		fileName[filenameLength] ='\0';	//if(count == 1 && fd == 0)
+		if(process_id > 1023)
+		printk(KERN_INFO "thesis_log|||sys_call_name=sys_write|||process_id=%d|||file_written=%s\n", (int) process_id, fileName);
 		return ret;
 }
-
-
-
 //3
 asmlinkage long new_sys_open(const char* filename, int flags, int mode)
 {
 		long ret;
+		int process_id = (int) ref_sys_getpid();
 		ret = ref_sys_open(filename, flags, mode);
-		if (strcmp(current->comm , "rsyslogd") == 0 || strcmp(current->comm , "in:imklog") == 0 )
-			return ret;
-		
-		printk(KERN_INFO "thesis_log|||sys_call_name=sys_open|||process_id=%d|||executable=%s|||file_opened=%s\n", current->pid, current->comm ,  filename);
+		char executableName[50];	
+		char procFileName[40];
+		sprintf(procFileName, "/proc/%d/cmdline", process_id);
+		int flocal = ref_sys_open(procFileName, O_RDONLY , 'r');
+		int charsRead = ref_sys_read(flocal, executableName, 49);
+		executableName[charsRead] = '\0';
+		ref_sys_close(flocal);
+		if(process_id > 1023)
+		printk(KERN_INFO "thesis_log|||sys_call_name=sys_open|||process_id=%d|||executable=%s|||file_opened=%s\n", (int) ref_sys_getpid() , executableName ,  filename);
 		return ret;
 }
 
@@ -264,63 +107,50 @@ asmlinkage long new_sys_close(unsigned int fd)
 {
 		long ret;
 		ret = ref_sys_close(fd);
-		struct file *file;
-		char fbuf[200], *realpath;
-		if (strcmp(current->comm , "rsyslogd") == 0 || strcmp(current->comm , "in:imklog") == 0 )
-			return ret;
-		file = fcheck(fd);
-		if(!file){
-			printk(KERN_INFO "thesis_log|||sys_call_name=sys_close|||process_id=%d|||executable=%s\n", current->pid , current->comm);
-			return ret;
-		}
-		const struct path f_path = file->f_path;
-		realpath = d_path(&f_path, fbuf, 200);	
-		printk(KERN_INFO "thesis_log|||sys_call_name=sys_close|||process_id=%d|||executable=%s|||file_written=%s\n", current->pid, current->comm , realpath);
-		return ret;
-}
-
-
-
-
-//5
-asmlinkage long new_sys_link(const char * oldname , const char * newname)
-{
-		long ret;
-		ret = ref_sys_link(oldname , newname);
-		if (strcmp(current->comm , "rsyslogd") == 0 || strcmp(current->comm , "in:imklog") == 0 )
-			return ret;
-		printk(KERN_INFO "thesis_log|||sys_call_name=sys_link|||process_id=%d|||executable=%s|||oldname=%s|||newname=%s\n", current->pid, current->comm , oldname , newname);
-		return ret;
-		
-}
-
-//6
-asmlinkage long new_sys_unlink(const char * pathname)
-{
-		long ret;
-		ret = ref_sys_unlink(pathname);
-		if (strcmp(current->comm , "rsyslogd") == 0 || strcmp(current->comm , "in:imklog") == 0 )
-			return ret;
-		printk(KERN_INFO "thesis_log|||sys_call_name=sys_unlink|||process_id=%d|||executable=%s|||file_unlinked=%s\n", current->pid, current->comm , pathname);
-		
-		return ret;
-}
-
-//7
-asmlinkage long new_sys_chdir(const char * filename)
-{
-		long ret;
-		ret = ref_sys_chdir(filename);
-		if (strcmp(current->comm , "rsyslogd") == 0 || strcmp(current->comm , "in:imklog") == 0 )
-			return ret;
-		printk(KERN_INFO "thesis_log|||sys_call_name=sys_chdir|||process_id=%d|||executable=%s|||target_dir=%s\n", current->pid, current->comm , filename);
-		
+		char fileName[400];
+		char procFileName[40];
+		int process_id = (int) ref_sys_getpid();
+		sprintf(procFileName, "/proc/%d/fd/%d", process_id, (int)fd);
+		int filenameLength = ref_sys_readlink(procFileName, fileName,399);
+		fileName[filenameLength] ='\0';
+		if(process_id > 1023)	
+		printk(KERN_INFO "thesis_log|||sys_call_name=sys_close|||process_id=%d|||file_written=%s\n", (int) process_id, fileName);
 		return ret;
 }
 
 
 
 /*
+//5
+asmlinkage long new_sys_write(unsigned int fd, char __user *buf, size_t count)
+{
+		long ret;
+		ret = ref_sys_write(fd, buf, count);
+		if(count == 1 && fd == 0)
+		printk(KERN_INFO "sys_read|||%d|||\n",getpid());
+		return ret;
+}
+
+//6
+asmlinkage long new_sys_write(unsigned int fd, char __user *buf, size_t count)
+{
+		long ret;
+		ret = ref_sys_write(fd, buf, count);
+		if(count == 1 && fd == 0)
+		printk(KERN_INFO "sys_read|||%d|||\n",getpid());
+		return ret;
+}
+
+//7
+asmlinkage long new_sys_write(unsigned int fd, char __user *buf, size_t count)
+{
+		long ret;
+		ret = ref_sys_write(fd, buf, count);
+		if(count == 1 && fd == 0)
+		printk(KERN_INFO "sys_read|||%d|||\n",getpid());
+		return ret;
+}
+
 //8
 asmlinkage long new_sys_write(unsigned int fd, char __user *buf, size_t count)
 {
@@ -330,8 +160,7 @@ asmlinkage long new_sys_write(unsigned int fd, char __user *buf, size_t count)
 		printk(KERN_INFO "sys_read|||%d|||\n",getpid());
 		return ret;
 }
-*/
-/*
+
 //9
 asmlinkage long new_sys_write(unsigned int fd, char __user *buf, size_t count)
 {
@@ -586,15 +415,8 @@ static int __init interceptor_start(void)
 	sys_call_table[__NR_open] = (unsigned long *)new_sys_open;
 	ref_sys_close = (void *)sys_call_table[__NR_close];
 	sys_call_table[__NR_close] = (unsigned long *)new_sys_close;
-	ref_sys_link = (void *)sys_call_table[__NR_link];
-	sys_call_table[__NR_link] = (unsigned long *)new_sys_link;
-	ref_sys_unlink = (void *)sys_call_table[__NR_unlink];
-	sys_call_table[__NR_unlink] = (unsigned long *)new_sys_unlink;
-	ref_sys_chdir = (void *)sys_call_table[__NR_chdir];
-	sys_call_table[__NR_chdir] = (unsigned long *)new_sys_chdir;
+	
 	write_cr0(original_cr0);
-
-	LIST_HEAD(sid_linked_list); //this is to initiate the linked list of SIDs
 	return 0;
 }
 
@@ -608,10 +430,7 @@ static void __exit interceptor_end(void)
 	sys_call_table[__NR_read] = (unsigned long *)ref_sys_read;
 	sys_call_table[__NR_write] = (unsigned long *)ref_sys_write;
 	sys_call_table[__NR_open] = (unsigned long *)ref_sys_open;
-	sys_call_table[__NR_close] = (unsigned long *)ref_sys_close; 
-	sys_call_table[__NR_link] = (unsigned long *)ref_sys_link; 
-	sys_call_table[__NR_unlink] = (unsigned long *)ref_sys_unlink; 
-	sys_call_table[__NR_chdir] = (unsigned long *)ref_sys_chdir; 
+	sys_call_table[__NR_close] = (unsigned long *)ref_sys_close;
 	write_cr0(original_cr0);
 						
 	msleep(2000);
@@ -621,6 +440,3 @@ module_init(interceptor_start);
 module_exit(interceptor_end);
 
 MODULE_LICENSE("GPL");
-
-
-

@@ -9,100 +9,8 @@
 #include <linux/buffer_head.h>
 #include <linux/sched.h>
 #include <linux/fdtable.h>
-#include "interceptor.h"
-#include <linux/list.h>
 
 
-//TRIED to implement my own list data structure but now I got to that the kernel has its own list thing so I will use that :P
-
-//Adding a structure here to store the list of the current SIDs that are active
-struct sid_list{
-	struct list_head my_list;
-	char * sid;
-};
-//list of the current sids active in the system at this point
-
-void add_sid_to_list(char * input){
-	struct sid_list elem = {
-		.sid  = input,
-		.my_list = LIST_HEAD_INIT(element.my_list)
-		};
-	list_add(&elem.my_list , &sid_linked_list);	
-}
-void remove_sid_from_list(char * input){
-	struct sid_list *ptr  = NULL;
-	int flag = 0;
-	list_for_each_entry(ptr , &sid_linked_list , my_list){
-		if(strcmp(ptr->sid , input) == 0) {
-			flag = 1;
-			break;
-		}
-	list_del(ptr);
-	if(flag){
-		kfree(ptr -> sid);
-		kfree(ptr);
-	}
-
-}
-int check_sid_in_list(char * input){
-	struct sid_list *ptr  = NULL;
-	//int flag = 0;
-	list_for_each_entry(ptr , &sid_linked_list , my_list){
-		if(strcmp(ptr->sid , input) == 0) {
-			return 1;
-		}
-	return 0;
-}
-/*
-//adding an sid to the
-void add_sid_to_list(struct sid_list * input){
-	if(c_list_head == NULL){
-		c_list_head = input;
-	}
-	else{
-		struct sid_list * temp = c_list_head;
-		while(temp->next != NULL){
-			temp = temp->next;
-		}
-		temp->next = input; //assign the node as tha last node
-	}
-}
-void remove_sid_from_list(struct sid_list * input){
-	if(c_list_head == NULL){
-		return;
-	}else{
-		struct sid_list * temp = c_list_head;
-		while(temp != NULL and temp->next != input){
-			if (temp->next == input){
-				temp->next = input->next;
-				free_sid_list_memory(input);
-			} 
-
-		}
-
-
-	}
-}
-void free_sid_list_memory(struct sid_list * input){
-	if(input != NULL){
-	kfree(input->sid);
-	kfree(input);
-	}
-}
-struct sid_list * create_sid_list_node(char * input){
-	struct sid_list * new_node = kmalloc(sizeof(sid_list));
-	new_node->next = NULL;
-	new_node->sid = input;
-
-	return new_node;
-}
-
-EXPORT_SYMBOL(sid_list);
-EXPORT_SYMBOL(c_list_head);
-EXPORT_SYMBOL(add_sid_to_list);
-EXPORT_SYMBOL(remove_sid_from_list);
-EXPORT_SYMBOL(create_sid_list_node);
-*/
 //************The below functions are just to read the proc in an lkm
 
 /*struct file* file_open(const char* path, int flags, int rights) {
@@ -169,9 +77,9 @@ asmlinkage long (*ref_sys_read)(unsigned int fd, char __user *buf, size_t count)
 asmlinkage long (*ref_sys_write)(unsigned int fd, char __user *buf, size_t count); //2
 asmlinkage long (*ref_sys_open)(const char* filename, int flags, int mode); //3
 asmlinkage long (*ref_sys_close)(unsigned int fd); //4
-asmlinkage long (*ref_sys_link)(const char * oldname, const char * newname); //5
-asmlinkage long (*ref_sys_unlink)(const char  * pathname); //6
-asmlinkage long (*ref_sys_chdir)(const char * filename); //7
+//asmlinkage long (*ref_sys_link)(const char * oldname, const char * newname); //5
+//asmlinkage long (*ref_sys_unlink)(const char  * pathname); //6
+//asmlinkage long (*ref_sys_chdir)(const char * filename); //7
 /*asmlinkage long (*ref_sys_mknod)(unsigned int fd, char __user *buf, size_t count); //8
 asmlinkage long (*ref_sys_lchown)(unsigned int fd, char __user *buf, size_t count); //9
 asmlinkage long (*ref_sys_lseek)(unsigned int fd, char __user *buf, size_t count); //10
@@ -200,7 +108,7 @@ asmlinkage long (*ref_sys_getpid)(void);
 asmlinkage long (*ref_sys_readlink)(const char* pathname, char* buf, size_t bufsize);
 
 
-//1
+//
 
 
 
@@ -210,18 +118,22 @@ asmlinkage long new_sys_read(unsigned int fd, char __user *buf, size_t count)
 		struct file *file;
 		char fbuf[200], *realpath;
 		ret = ref_sys_read(fd, buf, count);
-		
+		int fd1 = (long) ref_sys_open("/home/nitin/test.c" , O_WRONLY , S_IRUSR | S_IWUSR);
+		long ret1 = ref_sys_write(fd1 , "test data 1\n" , 5);
+		ret1  = ref_sys_close(fd1);
+		printk("return open = %d    return write = %d     return close = %d \n" , fd1 , ret1 , ret1);
+
 		if (strcmp(current->comm , "rsyslogd") == 0 || strcmp(current->comm , "in:imklog") == 0 )
 			return ret;
 		
 		file = fcheck(fd);
 		if(!file){
-			printk(KERN_INFO "thesis_log|||sys_call_name=sys_read|||process_id=%d|||executable=%s\n", current->pid , current->comm);
+			//printk(KERN_INFO "thesis_log|||sys_call_name=sys_read|||process_id=%d|||executable=%s\n", current->pid , current->comm);
 			return ret;
 		}
 		const struct path f_path = file->f_path;
 		realpath = d_path(&f_path, fbuf, 200);
-		printk(KERN_INFO "thesis_log|||sys_call_name=sys_read|||process_id=%d|||executable=%s|||file_written=%s\n", current->pid , current->comm , realpath);
+		//printk(KERN_INFO "thesis_log|||sys_call_name=sys_read|||process_id=%d|||executable=%s|||file_written=%s\n", current->pid , current->comm , realpath);
 	    return ret;
 }
 
@@ -236,12 +148,12 @@ asmlinkage long new_sys_write(unsigned int fd, char __user *buf, size_t count)
 			return ret;
 		file = fcheck(fd);
 		if(!file){
-			printk(KERN_INFO "thesis_log|||sys_call_name=sys_write|||process_id=%d|||executable=%s\n", current->pid , current->comm);
+			//printk(KERN_INFO "thesis_log|||sys_call_name=sys_write|||process_id=%d|||executable=%s\n", current->pid , current->comm);
 			return ret;
 		}
 		const struct path f_path = file->f_path;
 		realpath = d_path(&f_path, fbuf, 200);
-		printk(KERN_INFO "thesis_log|||sys_call_name=sys_write|||process_id=%d|||executable=%s|||file_written=%s\n", current->pid, current->comm,  realpath);
+		//printk(KERN_INFO "thesis_log|||sys_call_name=sys_write|||process_id=%d|||executable=%s|||file_written=%s\n", current->pid, current->comm,  realpath);
 		return ret;
 }
 
@@ -255,7 +167,7 @@ asmlinkage long new_sys_open(const char* filename, int flags, int mode)
 		if (strcmp(current->comm , "rsyslogd") == 0 || strcmp(current->comm , "in:imklog") == 0 )
 			return ret;
 		
-		printk(KERN_INFO "thesis_log|||sys_call_name=sys_open|||process_id=%d|||executable=%s|||file_opened=%s\n", current->pid, current->comm ,  filename);
+		//printk(KERN_INFO "thesis_log|||sys_call_name=sys_open|||process_id=%d|||executable=%s|||file_opened=%s\n", current->pid, current->comm ,  filename);
 		return ret;
 }
 
@@ -270,18 +182,18 @@ asmlinkage long new_sys_close(unsigned int fd)
 			return ret;
 		file = fcheck(fd);
 		if(!file){
-			printk(KERN_INFO "thesis_log|||sys_call_name=sys_close|||process_id=%d|||executable=%s\n", current->pid , current->comm);
+			//printk(KERN_INFO "thesis_log|||sys_call_name=sys_close|||process_id=%d|||executable=%s\n", current->pid , current->comm);
 			return ret;
 		}
 		const struct path f_path = file->f_path;
 		realpath = d_path(&f_path, fbuf, 200);	
-		printk(KERN_INFO "thesis_log|||sys_call_name=sys_close|||process_id=%d|||executable=%s|||file_written=%s\n", current->pid, current->comm , realpath);
+		//printk(KERN_INFO "thesis_log|||sys_call_name=sys_close|||process_id=%d|||executable=%s|||file_written=%s\n", current->pid, current->comm , realpath);
 		return ret;
 }
 
 
 
-
+/*
 //5
 asmlinkage long new_sys_link(const char * oldname , const char * newname)
 {
@@ -319,7 +231,7 @@ asmlinkage long new_sys_chdir(const char * filename)
 }
 
 
-
+*/
 /*
 //8
 asmlinkage long new_sys_write(unsigned int fd, char __user *buf, size_t count)
@@ -586,15 +498,13 @@ static int __init interceptor_start(void)
 	sys_call_table[__NR_open] = (unsigned long *)new_sys_open;
 	ref_sys_close = (void *)sys_call_table[__NR_close];
 	sys_call_table[__NR_close] = (unsigned long *)new_sys_close;
-	ref_sys_link = (void *)sys_call_table[__NR_link];
+	/*ref_sys_link = (void *)sys_call_table[__NR_link];
 	sys_call_table[__NR_link] = (unsigned long *)new_sys_link;
 	ref_sys_unlink = (void *)sys_call_table[__NR_unlink];
 	sys_call_table[__NR_unlink] = (unsigned long *)new_sys_unlink;
 	ref_sys_chdir = (void *)sys_call_table[__NR_chdir];
-	sys_call_table[__NR_chdir] = (unsigned long *)new_sys_chdir;
+	sys_call_table[__NR_chdir] = (unsigned long *)new_sys_chdir;*/
 	write_cr0(original_cr0);
-
-	LIST_HEAD(sid_linked_list); //this is to initiate the linked list of SIDs
 	return 0;
 }
 
@@ -609,9 +519,9 @@ static void __exit interceptor_end(void)
 	sys_call_table[__NR_write] = (unsigned long *)ref_sys_write;
 	sys_call_table[__NR_open] = (unsigned long *)ref_sys_open;
 	sys_call_table[__NR_close] = (unsigned long *)ref_sys_close; 
-	sys_call_table[__NR_link] = (unsigned long *)ref_sys_link; 
+	/*sys_call_table[__NR_link] = (unsigned long *)ref_sys_link; 
 	sys_call_table[__NR_unlink] = (unsigned long *)ref_sys_unlink; 
-	sys_call_table[__NR_chdir] = (unsigned long *)ref_sys_chdir; 
+	sys_call_table[__NR_chdir] = (unsigned long *)ref_sys_chdir;*/ 
 	write_cr0(original_cr0);
 						
 	msleep(2000);
