@@ -112,11 +112,27 @@ static ssize_t dev_read(struct file * filp , char * buff , size_t len , loff_t *
 		count++ ;
 		len--;
 		readPos++;
+		
 	}
 	printk(KERN_ALERT"\n");
+	*off = 0;
 	//*off = 0;
 	//readPos = 0;
 	return count ;
+	/*
+
+
+
+
+
+
+
+
+	//function to copy kernel space buffer to user space
+	if ( copy_to_user(buff,buf,strlen(buf)) != 0 )
+		printk( "Kernel -> userspace copy failed!\n" );
+	return strlen(buf);
+	*/
 }
 
 //user space program will try to write down messages from user space to this device. control mechanism is set.
@@ -129,11 +145,20 @@ static ssize_t dev_write(struct file * filp , const char * buff , size_t len , l
 		printk(KERN_ALERT "%c" , buff[len - 1]);
 		buf[len] = buff[--len];
 		count++;
+		//(*off)++;
 		//len--;
 	}
 	printk(KERN_ALERT "\n");
 	//*off = 0;
 	return count;
+	
+
+
+
+	/* function to copy user space buffer to kernel space
+	if ( copy_from_user(buf,buff,len) != 0 )
+		printk( "Userspace -> kernel copy failed!\n" );
+	return 0;*/
 }
 
 

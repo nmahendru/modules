@@ -1,0 +1,1 @@
+cmd_/home/nitin/thesis/modules/read_inode_list.ko := ld -r -m elf_x86_64 -T /home/nitin/thesis/linux/scripts/module-common.lds --build-id  -o /home/nitin/thesis/modules/read_inode_list.ko /home/nitin/thesis/modules/read_inode_list.o /home/nitin/thesis/modules/read_inode_list.mod.o

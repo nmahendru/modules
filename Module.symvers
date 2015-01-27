@@ -1,2 +1,2 @@
-0xe17ada44	read_char_dev_k	/home/nitin/thesis/modules/char_dev	EXPORT_SYMBOL
-0x2255c817	write_char_dev_k	/home/nitin/thesis/modules/char_dev	EXPORT_SYMBOL
+0x6d7042aa	my_char_dev_return_read_k	/home/nitin/thesis/modules/my_char_dev_return/my_char_dev_return	EXPORT_SYMBOL
+0x4f4f7bd2	my_char_dev_return_write_k	/home/nitin/thesis/modules/my_char_dev_return/my_char_dev_return	EXPORT_SYMBOL
