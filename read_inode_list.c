@@ -27,40 +27,30 @@ static int initialize_list(){
   sub_info = call_usermodehelper_setup( argv[0], argv, envp, GFP_ATOMIC);
     if (sub_info == NULL) return -ENOMEM;
     call_usermodehelper_exec( sub_info, UMH_WAIT_PROC );
-    char * buf = kmalloc(8 , GFP_KERNEL);
+    char * buf = kmalloc(9 , GFP_KERNEL);
     if(buf == NULL){
       printk("Cannot allocate memory using kmalloc\n");
      return -1;
     }
-    my_char_dev_return_read_k(buf , 7);
-    /*struct return_value{
-      short a;
-    };
-    struct return_value * temp = (struct return_value *) buf;
-    *///int number_of_lines = 0;
-    //number_of_lines = *buf;
-    //kfree(buf);
-    
-    int i;
-    sscanf(buf , "%d" , &i);
-    for( i = 0 ; i < 8 ; i++){
-      printk("%c",buf[i]);
-    }
-    printk("\n");
-    //printk("value read of the return device is %d\n" , temp->a);
-    printk("value as an int is %d\n" , i);
+    my_char_dev_return_read_k(buf , 8);
+    int j;
+    sscanf(buf , "%d" , &j);
     kfree(buf);
+    int i_cnt;
+    for( i_cnt = 0 ; i_cnt < j ; i_cnt++);
   return 0;
 }
 
 static int __init mod_entry_func( void )
 {
+  printk("read_inode_list loaded\n");
   return initialize_list();
 }
 
 
 static void __exit mod_exit_func( void )
 {
+  printk("read_inode_list unloaded \n" );
   return;
 }
 

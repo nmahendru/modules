@@ -6,12 +6,19 @@
 #include <string>
 #include <fstream>
 #include <vector>
-#define input_sid_file sample_sid_input.txt
+#include <cstdio>
+#include <cstring>
+#include <time.h>
+#define INPUT_SID_FILE "/home/nitin/thesis/modules/sample_sid_input.txt"
+#define RETURN_DEVICE_NAME "/dev/my_char_dev_return"
+#define CHAR_DEVICE_NAME "/dev/my_char_dev"
+
 using namespace std;
+
 typedef struct hs{
-	unsigned int key;
-	char * values[];
-	struct hs * next;
+	unsigned long inode_number;
+	const char ** values;
+	//struct hs * next;
 	
 }s_hash;
 
@@ -32,11 +39,42 @@ void split(const string& str, const string& delimiters , vector<string>& tokens)
         pos = str.find_first_of(delimiters, lastPos);
     }
 }
+void write_line_to_device(s_hash * input , int size){
+	/* C++ version does not work for c strings
+	ofstream outfile(RETURN_DEVICE_NAME);
+	outfile << input->inode_number;
+	for(int i = 0 ; i < size ; i++){
+		outfile << strlen(input->values[i] << input->values[i];
+	}
+	outfile.close();
+	*/
+	FILE * fp = fopen(CHAR_DEVICE_NAME , "w");
+	for(int i = 0 ; i < size ; i++){
 
+		fprintf(fp , "%ul%d%s" , input->inode_number,(int)strlen(input->values[i]) , input->values[i]);
+	}
+	fclose(fp);
+}
+void write_signal_for_kernel_to_read(){
+	FILE * fp = fopen(RETURN_DEVICE_NAME , "w");
+	fprintf(fp, "%s", "done" );
+
+	fclose(fp);
+}
+void check_if_kernel_has_read(){
+	FILE * fp = open(RETURN_DEVICE_NAME , "r");
+	char temp[9];
+	while(strncmp(temp , "read" , 4) == 0){
+//usleep takes an argument which is microseconds so I multiplied 10 milliseconds by 1000	
+	usleep(10 * 1000); 
+	fscanf(fp , "%s", temp);
+	}
+	fclose(fp);
+}
 //void tokenize(const string& input , const)
 int main(int argc, char const *argv[])
 {
-	ifstream infile("input_sid_file");
+	ifstream infile(INPUT_SID_FILE);
 	string line;
 	string delims(1,'$');
 	vector<string> tokens;
@@ -45,16 +83,24 @@ int main(int argc, char const *argv[])
 
 			s_hash * temp = new s_hash;
 		
-			temp->key = stoi(tokens[0] , nullptr , 10);
+			temp->inode_number = stoi(tokens[0] , nullptr , 10);
 		
-			int numSids = delims.size() - 1;
-			temp->values = new char[numSids];
+			int numSids = tokens.size() - 1;
+			temp->values = new const char * [numSids];
 			for(int i = 0 ; i < numSids ; i++){
 				temp->values[i] = tokens.at(i + 1).c_str();
 			}
+//write one line to the character device			
+			write_line_to_device(temp, numSids);
+//write a signal value to the character device to allow kernel to read
+			write_signal_for_kernel_to_read();
+//check if kernel has read the signal
+			check_if_kernel_has_read();			
 
-			temp->key next = NULL;
-		}
+			tokens.clear();
+			free(temp);
+	}
+	infile.close();
 		
 	return 0;
 } 

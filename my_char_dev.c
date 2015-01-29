@@ -57,20 +57,23 @@ static int my_char_dev_read_k(char * buff , int length){
 	for( i = 0 ; i < length ; i++){
 		buff[i] = device_buffer[i];
 	}
-	device_buffer[length] = 0;
+	buff[length] = 0;
+	return length;
 }
 static int my_char_dev_write_k(char * buff , int length){
 	int i;
 	for(i = 0 ; i < length ; i++){
 		device_buffer[i] = buff[i];
 	}
-	buff[length] = 0;
+	device_buffer[length] = 0;
+	return length;
 }
 
 EXPORT_SYMBOL(my_char_dev_read_k);
 EXPORT_SYMBOL(my_char_dev_write_k);
 
 int device_init(){
+
     int ret;
     ret = register_chrdev(device_major, DEVICE_NAME, &fops);
     if(ret < 0) {
@@ -78,13 +81,13 @@ int device_init(){
         return ret;
     }
     memset(device_buffer, 0, BUFFER_SIZE);
-    printk(KERN_INFO "chardev: chrdev loaded.\n");
+    printk(KERN_INFO "my_char_dev loaded.\n");
     return 0;
 }
  
 void device_exit() {
     unregister_chrdev(device_major, DEVICE_NAME);
-    printk(KERN_INFO "chardev: chrdev unloaded.\n");
+    printk(KERN_INFO "my_char_dev unloaded.\n");
 }
  
 static int device_open(struct inode *nd, struct file *fp){
@@ -113,7 +116,7 @@ static ssize_t device_read(struct file *fp, char *buff, size_t length, loff_t *o
 }
  
 static ssize_t device_write(struct file *fp, const char *buff, size_t length, loff_t *offset) {
-	printk("device_buffer - buff_rptr = %d\nLength to be written = %d\n", (int)(device_buffer - buff_rptr), length);
+	printk("Length to be written = %d\n",  length);
     memset(device_buffer, 0, BUFFER_SIZE);
     int bytes_written = BUFFER_SIZE - (buff_wptr - device_buffer);
     if(bytes_written > length) bytes_written = length;

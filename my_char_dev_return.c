@@ -18,8 +18,8 @@ VERSION: 1.0
 #include <asm/system.h>
 #include <asm/uaccess.h>
  
-#define DEVICE_NAME "my_char_dev"
-#define BUFFER_SIZE 8
+#define DEVICE_NAME "my_char_dev_return"
+#define BUFFER_SIZE 9
  
 MODULE_LICENSE("Dual BSD/GPL");
 MODULE_AUTHOR("Zobayer Hasan");
@@ -58,14 +58,16 @@ static int my_char_dev_return_read_k(char * buff , int length){
     for( i = 0 ; i < length ; i++){
         buff[i] = device_buffer[i];
     }
-    device_buffer[length] = 0;
+    buff[length] = 0;
+    return length;
 }
 static int my_char_dev_return_write_k(char * buff , int length){
     int i;
     for(i = 0 ; i < length ; i++){
         device_buffer[i] = buff[i];
     }
-    buff[length] = 0;
+    device_buffer[length] = 0;
+    return length;
 }
 
 EXPORT_SYMBOL(my_char_dev_return_read_k);
@@ -79,13 +81,13 @@ int device_init(){
         return ret;
     }
     memset(device_buffer, 0, BUFFER_SIZE);
-    printk(KERN_INFO "chardev: chrdev loaded.\n");
+    printk(KERN_INFO "my_char_dev_return loaded.\n");
     return 0;
 }
  
 void device_exit() {
     unregister_chrdev(device_major, DEVICE_NAME);
-    printk(KERN_INFO "chardev: chrdev unloaded.\n");
+    printk(KERN_INFO "my_char_dev_return unloaded.\n");
 }
  
 static int device_open(struct inode *nd, struct file *fp){
@@ -105,7 +107,7 @@ static int device_release(struct inode *nd, struct file *fp) {
 }
  
 static ssize_t device_read(struct file *fp, char *buff, size_t length, loff_t *offset) {
-
+    printk("my_char_dev_return: Length to be read %d\n" , length);	
     int bytes_read = strlen(buff_rptr);
     if(bytes_read > length) bytes_read = length;
     copy_to_user(buff, buff_rptr, bytes_read);
@@ -114,7 +116,7 @@ static ssize_t device_read(struct file *fp, char *buff, size_t length, loff_t *o
 }
  
 static ssize_t device_write(struct file *fp, const char *buff, size_t length, loff_t *offset) {
-	printk("device_buffer - buff_rptr = %d\nLength to be written = %d\n", (int)(device_buffer - buff_rptr), length);
+	printk("my_char_dev_return: Length to be written = %d\n", length);
     memset(device_buffer, 0, BUFFER_SIZE);
     int bytes_written = BUFFER_SIZE - (buff_wptr - device_buffer);
     if(bytes_written > length) bytes_written = length;
