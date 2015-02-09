@@ -19,7 +19,7 @@ VERSION: 1.0
 #include <asm/uaccess.h>
  
 #define DEVICE_NAME "my_char_dev"
-#define BUFFER_SIZE 1024
+#define BUFFER_SIZE 1025
  
 MODULE_LICENSE("Dual BSD/GPL");
 MODULE_AUTHOR("Zobayer Hasan");

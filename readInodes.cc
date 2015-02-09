@@ -9,6 +9,7 @@
 #include <cstdio>
 #include <cstring>
 #include <time.h>
+#include <unistd.h>
 #define INPUT_SID_FILE "/home/nitin/thesis/modules/sample_sid_input.txt"
 #define RETURN_DEVICE_NAME "/dev/my_char_dev_return"
 #define CHAR_DEVICE_NAME "/dev/my_char_dev"
@@ -49,10 +50,17 @@ void write_line_to_device(s_hash * input , int size){
 	outfile.close();
 	*/
 	FILE * fp = fopen(CHAR_DEVICE_NAME , "w");
-	for(int i = 0 ; i < size ; i++){
+	char temp_buff[1023];
+	char * temp = temp_buff;
+	int  bytes_written = sprintf(temp_buff , "%d%lu" , size , input->inode_number);
 
-		fprintf(fp , "%ul%d%s" , input->inode_number,(int)strlen(input->values[i]) , input->values[i]);
+	for(int i = 0 ; i < size ; i++){
+		temp += bytes_written;
+		bytes_written = sprintf(temp , "%s%c" , input->values[i] , (char)1);
 	}
+	temp[bytes_written] = '\0'
+
+	fprintf( fp , "%s", temp_buff);
 	fclose(fp);
 }
 void write_signal_for_kernel_to_read(){
@@ -62,7 +70,7 @@ void write_signal_for_kernel_to_read(){
 	fclose(fp);
 }
 void check_if_kernel_has_read(){
-	FILE * fp = open(RETURN_DEVICE_NAME , "r");
+	FILE * fp = fopen(RETURN_DEVICE_NAME , "r");
 	char temp[9];
 	while(strncmp(temp , "read" , 4) == 0){
 //usleep takes an argument which is microseconds so I multiplied 10 milliseconds by 1000	

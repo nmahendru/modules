@@ -1,8 +1,6 @@
 /*
-AUTHOR: Zobayer Hasan
-PROGRAM: Character Device Driver
-DATE: Monday, 25 July 2011
-VERSION: 1.0
+AUTHOR: Nitin Mahendru
+
 */
  
 #include <linux/kernel.h>
@@ -49,7 +47,14 @@ static int device_opend = 0;
 static char device_buffer[BUFFER_SIZE];
 static char *buff_rptr;
 static char *buff_wptr;
- 
+
+
+
+
+
+
+
+
 module_param(device_major, int, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
 MODULE_PARM_DESC(device_major, DEVICE_NAME " major number");
 
