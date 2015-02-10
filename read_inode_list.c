@@ -10,9 +10,14 @@
 #include <linux/kernel.h>
 #include "char_dev.h"
 /**************************************************************************************************
+List of defines used as constants
+**************************************************************************************************/
+#define HASH_SIZE 1000
+/**************************************************************************************************
 Global declarations for this module.
 **************************************************************************************************/
 static struct sid_obj **  sid_hash_k = NULL;
+
 
 
 /***************************************************************************************************
@@ -55,7 +60,7 @@ This function adds a node to the has data structure and then returns without any
 
 **************************************************************************************************/
 void add_node(struct sid_obj * ptr){
-  int hash_value = ptr->inode_number % 1000 ;
+  int hash_value = ptr->inode_number % HASH_SIZE ;
   if(!sid_hash_k[hash_value]){
     sid_hash_k[hash_value] = ptr;
   }else{
@@ -67,7 +72,7 @@ void add_node(struct sid_obj * ptr){
 }
 
 struct sid_obj * get_node(unsigned long inode_number){
-  int hash_value = inode_number % 1000;
+  int hash_value = inode_number % HASH_SIZE;
   if(!sid_hash_k[hash_value]) return NULL;
   else{
     while(entry_ptr->next != NULL && entry_ptr->inode_number != inode_number) 
@@ -192,15 +197,15 @@ static int initialize_list(){
 
 /**************************************************************************************************
 Allocating an array of pointers to store the various hashed lists and then use that in retrieval of
-data and other things. Allocating an array of 1000 pointers. the last three digits of the inode 
+data and other things. Allocating an array of HASH_SIZE pointers. the last three digits of the inode 
 number will be used as a hash to this array. Link list to be used for collision resolution.
 **************************************************************************************************/
 
-sid_hash_k = (struct sid_obj ** ) local_kmalloc(sizeof(struct sid_obj *) * 1000 , GFP_KERNEL );
-if(!sid_hash_k){
+  sid_hash_k = (struct sid_obj ** ) local_kmalloc(sizeof(struct sid_obj *) * HASH_SIZE , GFP_KERNEL );
+  if(!sid_hash_k){
   printk("thesis: memory allocation for sid_hash array failed. Need to abort now\n");
   return -1;
-}
+  }
 //change the argv to point to the new user mode program
     argv = {"/home/nitin/thesis/modules/readInodes" , NULL};
     sub_info = call_usermodehelper_setup( argv[0], argv, envp, GFP_ATOMIC);
@@ -227,6 +232,14 @@ if(!sid_hash_k){
           inform_user_line_read();
     }
   return 0;
+}
+/***************************************************************************************************
+write_back_list
+This function will basically dump out the sid list which is there write now in the kernel memory
+to a file in userspace.
+***************************************************************************************************/
+static int write_back_list(){
+
 }
 
 static int __init mod_entry_func( void )
