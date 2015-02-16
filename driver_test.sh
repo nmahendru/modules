@@ -8,20 +8,20 @@
 #mknod my_char_dev c 60 0
 #mknod my_char_dev_return c 61 0
 
-rm -rf my_char_dev my_char_dev_return
+rm -rf my_char_dev my_char_dev_return &> /dev/null
 
 
-rm *.mod.o *.mod.c *.o *.ko Module.symvers
-rmmod read_inode_list
-rmmod my_char_dev
-rmmod my_char_dev_return
+rm *.mod.o *.mod.c *.o *.ko Module.symvers &> /dev/null
+rmmod read_inode_list &> /dev/null
+rmmod my_char_dev &> /dev/null
+rmmod my_char_dev_return &> /dev/null
 
 echo "Making my_char dev now"
 mkdir my_char_dev
 cp Makefile.my_char_dev my_char_dev/Makefile
 cp my_char_dev.c my_char_dev/my_char_dev.c
 cd my_char_dev
-rm *.mod.o *.mod.c *.o *.ko Module.symvers
+#rm *.mod.o *.mod.c *.o *.ko Module.symvers
 make
 echo "inserting my char dev now"
 insmod my_char_dev.ko
@@ -32,7 +32,7 @@ echo "Making my_char_dev_return now"
 cp Makefile.my_char_dev_return my_char_dev_return/Makefile
 cp my_char_dev_return.c my_char_dev_return/my_char_dev_return.c
 cd my_char_dev_return
-rm *.mod.o *.mod.c *.o *.ko Module.symvers
+#rm *.mod.o *.mod.c *.o *.ko Module.symvers
 make
 echo "inserting my_char_dev_return now"
 insmod my_char_dev_return.ko
@@ -43,8 +43,8 @@ echo "Making read inode list now"
 
 cp Makefile.read_inode_list Makefile
 make
-insmod read_inode_list.ko
-rm -rf my_char_dev my_char_dev_return
+#insmod read_inode_list.ko
+#rm -rf my_char_dev my_char_dev_return
 
 #echo "making user call process test now"
 #cp Makefile.user_process_call_test Makefile

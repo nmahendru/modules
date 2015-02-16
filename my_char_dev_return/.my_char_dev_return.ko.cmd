@@ -1,0 +1,1 @@
+cmd_/home/nitin/thesis/modules/my_char_dev_return/my_char_dev_return.ko := ld -r -m elf_x86_64 -T /home/nitin/thesis/linux/scripts/module-common.lds --build-id  -o /home/nitin/thesis/modules/my_char_dev_return/my_char_dev_return.ko /home/nitin/thesis/modules/my_char_dev_return/my_char_dev_return.o /home/nitin/thesis/modules/my_char_dev_return/my_char_dev_return.mod.o

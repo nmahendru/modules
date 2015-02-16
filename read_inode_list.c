@@ -1,8 +1,22 @@
-//***********************************************
-// This program will read data from the structure
-// 1. This module will read the number of lines in the first call
-// 2. It will read subsequent lines in the nest calls
+/**************************************************************************************************
+This program will read data from the structure
+1. This module will read the number of lines in the first call
+2. It will read subsequent lines in the
 
+
+READ THIS WHEN YOU START REPROGRAMMING THIS CODE AS THIS WILL HELP!!!!!
+The program will start with 
+initialize_list()
+This function will basically read the inode list in to the kernel memory and then store in a hashed 
+data structure. This will basically call different functions to read the inode file in user space
+and then read that in line by line using a character device
+
+
+write_back_list()
+oppositte function of the above function
+
+
+**************************************************************************************************/
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/kmod.h>
@@ -45,9 +59,10 @@ list of inodes to be stored in the kernel memory. The memory here refers to the 
 ***************************************************************************************************/
 static struct sid_obj{
   unsigned long inode_number;
-  char * sids[];
+  
   int n_sids;
   struct sid_obj * next; 
+  char ** sids;
 };
 
 
@@ -75,10 +90,11 @@ struct sid_obj * get_node(unsigned long inode_number){
   int hash_value = inode_number % HASH_SIZE;
   if(!sid_hash_k[hash_value]) return NULL;
   else{
+    struct sid_obj * entry_ptr = sid_hash_k[hash_value];
     while(entry_ptr->next != NULL && entry_ptr->inode_number != inode_number) 
       entry_ptr = entry_ptr->next;
-    if(entry_ptr->inode_number == inode_number) return entry_pointer;
-    else return null;
+    if(entry_ptr->inode_number == inode_number) return entry_ptr;
+    else return NULL;
   }
 }
 
@@ -96,7 +112,7 @@ Hashing code section ends
 //extern int read_char_dev_k(char * buff , int len); 
 
 MODULE_LICENSE( "GPL" );
-static replace_1_with_0(char * buff){
+static void replace_1_with_0(char * buff){
   int strl = strlen(buff);
   int i ;
   for(i = 0 ; i < strl ; i++){
@@ -115,14 +131,14 @@ hash so that now it's ready for access when checked by hooked system calls
 ***************************************************************************************************/
 static int read_one_line(char * buff){
   int strl = strlen(buff);
-  read_one_line(buff);
+  replace_1_with_0(buff);
   unsigned long inode_number;
   int r_value = 0;
   int num_sids;
   // read the inode number from the buffer
-  r_value = sscanf(buff , "%d" , num_sids );
+  r_value = sscanf(buff , "%d" , &num_sids );
   buff += r_value;
-  r_value = sscanf(buff , "%lu" , inode_number);
+  r_value = sscanf(buff , "%lu" , &inode_number);
   buff += r_value;
   struct sid_obj * obj_ptr = (struct sid_obj*)local_kmalloc(sizeof(struct sid_obj));
   if(!obj_ptr){
@@ -131,7 +147,7 @@ static int read_one_line(char * buff){
   }
   obj_ptr->inode_number = inode_number;
   obj_ptr->n_sids = num_sids;
-  obj_ptr->sids = local_kmalloc(sizeof(char *) * num_sids);
+  obj_ptr->sids = (char **)local_kmalloc(sizeof(char *) * num_sids);
   if(!obj_ptr->sids){
     printk("thesis: Cannot allocate memory for the sid array for inode = %lu\n" , inode_number);
     return -1 ;
@@ -201,14 +217,14 @@ data and other things. Allocating an array of HASH_SIZE pointers. the last three
 number will be used as a hash to this array. Link list to be used for collision resolution.
 **************************************************************************************************/
 
-  sid_hash_k = (struct sid_obj ** ) local_kmalloc(sizeof(struct sid_obj *) * HASH_SIZE , GFP_KERNEL );
+  sid_hash_k = (struct sid_obj ** ) local_kmalloc(sizeof(struct sid_obj *) * HASH_SIZE);
   if(!sid_hash_k){
   printk("thesis: memory allocation for sid_hash array failed. Need to abort now\n");
   return -1;
   }
 //change the argv to point to the new user mode program
-    argv = {"/home/nitin/thesis/modules/readInodes" , NULL};
-    sub_info = call_usermodehelper_setup( argv[0], argv, envp, GFP_ATOMIC);
+    char * argv1[] = { "/home/nitin/thesis/modules/readInodes" , NULL};
+    sub_info = call_usermodehelper_setup( argv1[0], argv1, envp, GFP_ATOMIC);
     if (sub_info == NULL) return -ENOMEM;
     call_usermodehelper_exec( sub_info, UMH_NO_WAIT );  
 
@@ -220,7 +236,7 @@ number will be used as a hash to this array. Link list to be used for collision 
           check_if_line_written();
 //code to read the line from the device
 
-          char * line_buff = kmalloc(1024 , GFP_kernel);
+          char * line_buff = kmalloc(1024 , GFP_KERNEL);
           my_char_dev_read_k(line_buff, 1023);
           if(read_one_line(line_buff) == -1) return -1;
 
@@ -233,12 +249,73 @@ number will be used as a hash to this array. Link list to be used for collision 
     }
   return 0;
 }
+
+static int check_if_line_read(){
+  char * buf = local_kmalloc(8);
+  if(!buf){
+      printk("thesis: Cannot allocate memory for reading the return device. tryin to read the message \"written\" ");
+      return -1;
+  }
+  my_char_dev_return_read_k(buf, 7);
+  while(strcmp(buf , "written") != 0){
+    my_char_dev_return_read_k(buf, 7);
+
+  } 
+
+}
+
+
+static int write_one_line(struct sid_obj * obj_ptr){
+  char * buff = local_kmalloc(1024);
+  char * temp = buff;
+  if(!buff){
+      printk("thesis: Cannot allocate memory for writing one line of inode = %lu\n" ,  obj_ptr->inode_number);
+      return -1;
+    }
+  int p = sprintf(buff , "%lu$" , obj_ptr->inode_number);
+  buff += p;
+  int i = 0;
+  for(i = 0; i < obj_ptr->n_sids ; i++){
+    p = sprintf(buff , "%s$", obj_ptr->sids[i]);
+    buff += p;
+  }
+  my_char_dev_write_k(buff , strlen(temp));
+  char * temp1 = "write";
+  my_char_dev_return_write_k(temp1 , strlen(temp1));
+
+
+}
 /***************************************************************************************************
 write_back_list
 This function will basically dump out the sid list which is there write now in the kernel memory
 to a file in userspace.
 ***************************************************************************************************/
 static int write_back_list(){
+  int hash_size = HASH_SIZE ;
+  int i ;
+  struct sid_obj * obj_ptr = NULL;
+  int flag = 0;
+  struct subprocess_info *sub_info;
+  char *argv[] = { "/home/nitin/thesis/modules/writenodes", NULL };
+          static char *envp[] = {
+          "HOME=/",
+          "TERM=linux",
+          "PATH=/sbin:/bin:/usr/sbin:/usr/bin", NULL };
+  for (i = 0 ; i < hash_size  ; i++ ){
+      obj_ptr = sid_hash_k[i];
+      write_one_line(obj_ptr); 
+      check_if_line_read();
+      while(obj_ptr != NULL){
+          if(flag == 0){
+            flag = 1;
+            sub_info = call_usermodehelper_setup( argv[0], argv, envp, GFP_ATOMIC);
+            if (sub_info == NULL) return -ENOMEM;
+            call_usermodehelper_exec( sub_info, UMH_NO_WAIT);
+        }
+        
+      }
+  }
+
 
 }
 
@@ -252,7 +329,7 @@ static int __init mod_entry_func( void )
 static void __exit mod_exit_func( void )
 {
   printk("read_inode_list unloaded \n" );
-  return;
+  return write_back_list();
 }
 
 

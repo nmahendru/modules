@@ -1,7 +1,5 @@
 
-KBUILD_EXTRA_SYMBOLS := /home/nitin/thesis/modules/my_char_dev/Module.symvers /home/nitin/thesis/modules/my_char_dev_return/Module.symvers
-
-obj-m += read_inode_list.o
+obj-m += my_char_dev_return.o
 
 KDIR := /lib/modules/`uname -r`/build
 
