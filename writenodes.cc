@@ -65,6 +65,10 @@ int check_if_next_line_written(fstream& obj){
 	obj.getline(buf , 8);	
 	while(strcmp(buf,"write") != 0)
 	{
+/*
+The message done from the kernel would mean that it's done writing all the sid information so now
+writenodes needs to stop as there is no more data to read or write.
+*/		
 		if(strcmp(buf, "done") == 0){
 			return -1;
 		}

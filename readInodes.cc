@@ -58,7 +58,7 @@ void write_line_to_device(s_hash * input , int size){
 		temp += bytes_written;
 		bytes_written = sprintf(temp , "%s%c" , input->values[i] , (char)1);
 	}
-	temp[bytes_written] = '\0'
+	temp[bytes_written] = '\0';
 
 	fprintf( fp , "%s", temp_buff);
 	fclose(fp);
@@ -72,7 +72,7 @@ void write_signal_for_kernel_to_read(){
 void check_if_kernel_has_read(){
 	FILE * fp = fopen(RETURN_DEVICE_NAME , "r");
 	char temp[9];
-	while(strncmp(temp , "read" , 4) == 0){
+	while(strncmp(temp , "read" , 4) != 0){
 //usleep takes an argument which is microseconds so I multiplied 10 milliseconds by 1000	
 	usleep(10 * 1000); 
 	fscanf(fp , "%s", temp);

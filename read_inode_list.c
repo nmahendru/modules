@@ -173,16 +173,16 @@ add_node(obj_ptr);
 
 static void check_if_line_written(){
   char * buff = kmalloc(9 , GFP_KERNEL);
-  my_char_dev_return_read_k(buff, 8);
+  my_char_dev_return_read_k(buff, 7);
 
   while(strncmp(buff , "done" , 4) != 0){
-    my_char_dev_return_read_k(buff, 8);
+    my_char_dev_return_read_k(buff, 7);
   } 
   kfree(buff);
 }
 
 static inform_user_line_read(){
-  char temp[] = {'d' , 'o' , 'n' , 'e' , '\0'};
+  char temp[] = {'r' , 'e' , 'a' , 'd' , '\0'};
   my_char_dev_return_write_k(temp, 4);
 }
 /*************************************************************************************************
@@ -205,7 +205,7 @@ static int initialize_list(){
       printk("Cannot allocate memory using kmalloc\n");
      return -1;
     }
-    my_char_dev_return_read_k(buf , 8);
+    my_char_dev_return_read_k(buf , 7);
     int j;
     sscanf(buf , "%d" , &j);
     kfree(buf);
@@ -247,6 +247,14 @@ number will be used as a hash to this array. Link list to be used for collision 
 //inform the user mode program the line has been read an wait for the next line.
           inform_user_line_read();
     }
+/*
+Clear both the devices so that no false positives when they are used to write back to the user mode 
+file at shutdown
+*/    
+    my_char_dev_return_write_k("", 0);
+    my_char_dev_write_k("", 0);
+  
+
   return 0;
 }
 
@@ -286,6 +294,15 @@ static int write_one_line(struct sid_obj * obj_ptr){
 
 }
 /***************************************************************************************************
+@tell_user_line_written
+This function is used to tell the user mode process that a line is has been written and it's waiting 
+to be read by the kernel.
+***************************************************************************************************/
+void tell_user_line_written(){
+  char * msg = "write";
+  my_char_dev_return_write_k(msg, strlen(msg));
+}
+/***************************************************************************************************
 write_back_list
 This function will basically dump out the sid list which is there write now in the kernel memory
 to a file in userspace.
@@ -302,22 +319,32 @@ static int write_back_list(){
           "TERM=linux",
           "PATH=/sbin:/bin:/usr/sbin:/usr/bin", NULL };
   for (i = 0 ; i < hash_size  ; i++ ){
-      obj_ptr = sid_hash_k[i];
+      
+    obj_ptr = sid_hash_k[i];
+    if(obj_ptr == NULL) continue;
+
+    
+    while(obj_ptr != NULL){
       write_one_line(obj_ptr); 
-      check_if_line_read();
-      while(obj_ptr != NULL){
-          if(flag == 0){
-            flag = 1;
-            sub_info = call_usermodehelper_setup( argv[0], argv, envp, GFP_ATOMIC);
-            if (sub_info == NULL) return -ENOMEM;
-            call_usermodehelper_exec( sub_info, UMH_NO_WAIT);
-        }
-        
+      tell_user_line_written();
+/*
+The flag ensures that the usermode program is only called once in the first iteration.
+*/      
+      if(flag == 0){
+        sub_info = call_usermodehelper_setup( argv[0], argv, envp, GFP_ATOMIC);
+        if (sub_info == NULL) return -ENOMEM;
+        call_usermodehelper_exec( sub_info, UMH_NO_WAIT);
+        flag = 1;
       }
+      check_if_line_read();
+      obj_ptr = obj_ptr -> next;
+    }
+        
   }
-
-
 }
+
+
+
 
 static int __init mod_entry_func( void )
 {
