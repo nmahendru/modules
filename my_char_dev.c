@@ -81,17 +81,17 @@ int device_init(){
         return ret;
     }
     memset(device_buffer, 0, BUFFER_SIZE);
-    printk(KERN_INFO "my_char_dev loaded.\n");
+    printk(KERN_INFO "thesis: my_char_dev loaded.\n");
     return 0;
 }
  
 void device_exit() {
     unregister_chrdev(device_major, DEVICE_NAME);
-    printk(KERN_INFO "my_char_dev unloaded.\n");
+    printk(KERN_INFO "thesis: my_char_dev unloaded.\n");
 }
  
 static int device_open(struct inode *nd, struct file *fp){
-	printk("Device open called\n");
+	printk("thesis: my_char_dev: Device open called\n");
 	if(device_opend) return -EBUSY;
     device_opend++;
     buff_rptr = buff_wptr = device_buffer;
@@ -100,7 +100,7 @@ static int device_open(struct inode *nd, struct file *fp){
 }
  
 static int device_release(struct inode *nd, struct file *fp) {
-    printk("Device release called\n");
+    printk("thesis: my_char_dev: Device release called\n");
     if(device_opend) device_opend--;
     module_put(THIS_MODULE);
     return 0;
@@ -116,9 +116,10 @@ static ssize_t device_read(struct file *fp, char *buff, size_t length, loff_t *o
 }
  
 static ssize_t device_write(struct file *fp, const char *buff, size_t length, loff_t *offset) {
-	printk("Length to be written = %d\n",  length);
+	//printk("Length to be written = %d\n",  length);
+    int bytes_written;
     memset(device_buffer, 0, BUFFER_SIZE);
-    int bytes_written = BUFFER_SIZE - (buff_wptr - device_buffer);
+    bytes_written = BUFFER_SIZE - (buff_wptr - device_buffer);
     if(bytes_written > length) bytes_written = length;
     copy_from_user(buff_wptr, buff, bytes_written);
     //buff_wptr += bytes_written;

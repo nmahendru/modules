@@ -9,7 +9,7 @@
 #mknod my_char_dev_return c 61 0
 
 echo "compiling readInodes"
-g++ -std=c++11 -o readInodes readInodes.cc
+gcc -g -o readInodes readInodes.cc
 if [[ ! $? ]]; then
 	echo "readInodes compilation failed...exiting"
 	exit
@@ -79,15 +79,5 @@ if [[ ! $? ]]; then
 	echo " read_inode_list compilation failed...exiting"
 	exit
 fi
-#insmod read_inode_list.ko
-#rm -rf my_char_dev my_char_dev_return
-
-#echo "making user call process test now"
-#cp Makefile.user_process_call_test Makefile
-#make
-#rm Makefile
-#cp Makefile.write_user Makefile
-#make
-#rm Makefile
-#echo "inserting user process call test now"
-#insmod user_process_call_test.ko
+insmod read_inode_list.ko
+./readInodes

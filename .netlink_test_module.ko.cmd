@@ -1,0 +1,1 @@
+cmd_/home/nitin/thesis/modules/netlink_test_module.ko := ld -r -m elf_x86_64 -T /home/nitin/thesis/linux/scripts/module-common.lds --build-id  -o /home/nitin/thesis/modules/netlink_test_module.ko /home/nitin/thesis/modules/netlink_test_module.o /home/nitin/thesis/modules/netlink_test_module.mod.o

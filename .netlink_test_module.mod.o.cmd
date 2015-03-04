@@ -1,8 +1,9 @@
-cmd_/home/nitin/thesis/modules/read_inode_list.o := gcc -Wp,-MD,/home/nitin/thesis/modules/.read_inode_list.o.d  -nostdinc -isystem /usr/lib/gcc/x86_64-linux-gnu/4.8/include -I/home/nitin/thesis/linux/arch/x86/include -Iarch/x86/include/generated -Iinclude  -include /home/nitin/thesis/linux/include/linux/kconfig.h -D__KERNEL__ -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs -fno-strict-aliasing -fno-common -Werror-implicit-function-declaration -Wno-format-security -fno-delete-null-pointer-checks -O2 -m64 -mtune=generic -mno-red-zone -mcmodel=kernel -funit-at-a-time -maccumulate-outgoing-args -fstack-protector -DCONFIG_AS_CFI=1 -DCONFIG_AS_CFI_SIGNAL_FRAME=1 -DCONFIG_AS_CFI_SECTIONS=1 -DCONFIG_AS_FXSAVEQ=1 -pipe -Wno-sign-compare -fno-asynchronous-unwind-tables -mno-sse -mno-mmx -mno-sse2 -mno-3dnow -Wframe-larger-than=1024 -Wno-unused-but-set-variable -fno-omit-frame-pointer -fno-optimize-sibling-calls -g -pg -Wdeclaration-after-statement -Wno-pointer-sign -fno-strict-overflow -fconserve-stack -DCC_HAVE_ASM_GOTO  -DMODULE  -D"KBUILD_STR(s)=\#s" -D"KBUILD_BASENAME=KBUILD_STR(read_inode_list)"  -D"KBUILD_MODNAME=KBUILD_STR(read_inode_list)" -c -o /home/nitin/thesis/modules/.tmp_read_inode_list.o /home/nitin/thesis/modules/read_inode_list.c
+cmd_/home/nitin/thesis/modules/netlink_test_module.mod.o := gcc -Wp,-MD,/home/nitin/thesis/modules/.netlink_test_module.mod.o.d  -nostdinc -isystem /usr/lib/gcc/x86_64-linux-gnu/4.8/include -I/home/nitin/thesis/linux/arch/x86/include -Iarch/x86/include/generated -Iinclude  -include /home/nitin/thesis/linux/include/linux/kconfig.h -D__KERNEL__ -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs -fno-strict-aliasing -fno-common -Werror-implicit-function-declaration -Wno-format-security -fno-delete-null-pointer-checks -O2 -m64 -mtune=generic -mno-red-zone -mcmodel=kernel -funit-at-a-time -maccumulate-outgoing-args -fstack-protector -DCONFIG_AS_CFI=1 -DCONFIG_AS_CFI_SIGNAL_FRAME=1 -DCONFIG_AS_CFI_SECTIONS=1 -DCONFIG_AS_FXSAVEQ=1 -pipe -Wno-sign-compare -fno-asynchronous-unwind-tables -mno-sse -mno-mmx -mno-sse2 -mno-3dnow -Wframe-larger-than=1024 -Wno-unused-but-set-variable -fno-omit-frame-pointer -fno-optimize-sibling-calls -g -pg -Wdeclaration-after-statement -Wno-pointer-sign -fno-strict-overflow -fconserve-stack -DCC_HAVE_ASM_GOTO  -D"KBUILD_STR(s)=\#s" -D"KBUILD_BASENAME=KBUILD_STR(netlink_test_module.mod)"  -D"KBUILD_MODNAME=KBUILD_STR(netlink_test_module)" -DMODULE  -c -o /home/nitin/thesis/modules/netlink_test_module.mod.o /home/nitin/thesis/modules/netlink_test_module.mod.c
 
-source_/home/nitin/thesis/modules/read_inode_list.o := /home/nitin/thesis/modules/read_inode_list.c
+source_/home/nitin/thesis/modules/netlink_test_module.mod.o := /home/nitin/thesis/modules/netlink_test_module.mod.c
 
-deps_/home/nitin/thesis/modules/read_inode_list.o := \
+deps_/home/nitin/thesis/modules/netlink_test_module.mod.o := \
+    $(wildcard include/config/module/unload.h) \
   include/linux/module.h \
     $(wildcard include/config/sysfs.h) \
     $(wildcard include/config/modules.h) \
@@ -14,7 +15,6 @@ deps_/home/nitin/thesis/modules/read_inode_list.o := \
     $(wildcard include/config/tracing.h) \
     $(wildcard include/config/event/tracing.h) \
     $(wildcard include/config/ftrace/mcount/record.h) \
-    $(wildcard include/config/module/unload.h) \
     $(wildcard include/config/constructors.h) \
     $(wildcard include/config/debug/set/module/ronx.h) \
   include/linux/list.h \
@@ -467,226 +467,9 @@ deps_/home/nitin/thesis/modules/read_inode_list.o := \
   include/asm-generic/module.h \
   include/trace/events/module.h \
   include/trace/define_trace.h \
-  include/linux/slab.h \
-    $(wildcard include/config/slab/debug.h) \
-    $(wildcard include/config/failslab.h) \
-    $(wildcard include/config/slub.h) \
-    $(wildcard include/config/slob.h) \
-    $(wildcard include/config/debug/slab.h) \
-    $(wildcard include/config/slab.h) \
-  include/linux/slub_def.h \
-    $(wildcard include/config/slub/stats.h) \
-    $(wildcard include/config/slub/debug.h) \
-  include/linux/kmemleak.h \
-    $(wildcard include/config/debug/kmemleak.h) \
-  include/linux/delay.h \
-  /home/nitin/thesis/linux/arch/x86/include/asm/delay.h \
-  include/asm-generic/delay.h \
-  /home/nitin/thesis/modules/char_dev.h \
-  include/net/genetlink.h \
-    $(wildcard include/config/net/ns.h) \
-  include/linux/genetlink.h \
-  include/linux/netlink.h \
-  include/linux/socket.h \
-  /home/nitin/thesis/linux/arch/x86/include/asm/socket.h \
-  include/asm-generic/socket.h \
-  /home/nitin/thesis/linux/arch/x86/include/asm/sockios.h \
-  include/asm-generic/sockios.h \
-  include/linux/sockios.h \
-  include/linux/uio.h \
-  include/linux/capability.h \
-  include/linux/skbuff.h \
-    $(wildcard include/config/nf/conntrack.h) \
-    $(wildcard include/config/bridge/netfilter.h) \
-    $(wildcard include/config/nf/defrag/ipv4.h) \
-    $(wildcard include/config/nf/defrag/ipv6.h) \
-    $(wildcard include/config/xfrm.h) \
-    $(wildcard include/config/net/sched.h) \
-    $(wildcard include/config/net/cls/act.h) \
-    $(wildcard include/config/ipv6/ndisc/nodetype.h) \
-    $(wildcard include/config/net/dma.h) \
-    $(wildcard include/config/network/secmark.h) \
-    $(wildcard include/config/network/phy/timestamping.h) \
-  include/linux/kmemcheck.h \
-  include/linux/mm_types.h \
-    $(wildcard include/config/split/ptlock/cpus.h) \
-    $(wildcard include/config/want/page/debug/flags.h) \
-    $(wildcard include/config/cmpxchg/local.h) \
-    $(wildcard include/config/aio.h) \
-    $(wildcard include/config/mm/owner.h) \
-    $(wildcard include/config/mmu/notifier.h) \
-  include/linux/auxvec.h \
-  include/linux/prio_tree.h \
-  include/linux/rbtree.h \
-  include/linux/page-debug-flags.h \
-    $(wildcard include/config/page/poisoning.h) \
-    $(wildcard include/config/page/debug/something/else.h) \
-  include/linux/net.h \
-  include/linux/random.h \
-    $(wildcard include/config/arch/random.h) \
-  include/linux/irqnr.h \
-    $(wildcard include/config/generic/hardirqs.h) \
-  /home/nitin/thesis/linux/arch/x86/include/asm/archrandom.h \
-  include/linux/fcntl.h \
-  /home/nitin/thesis/linux/arch/x86/include/asm/fcntl.h \
-  include/asm-generic/fcntl.h \
-  include/linux/textsearch.h \
-  include/net/checksum.h \
-  /home/nitin/thesis/linux/arch/x86/include/asm/uaccess.h \
-    $(wildcard include/config/x86/wp/works/ok.h) \
-    $(wildcard include/config/x86/intel/usercopy.h) \
-  /home/nitin/thesis/linux/arch/x86/include/asm/uaccess_64.h \
-  /home/nitin/thesis/linux/arch/x86/include/asm/checksum.h \
-  /home/nitin/thesis/linux/arch/x86/include/asm/checksum_64.h \
-  include/linux/dmaengine.h \
-    $(wildcard include/config/async/tx/enable/channel/switch.h) \
-    $(wildcard include/config/dma/engine.h) \
-    $(wildcard include/config/async/tx/dma.h) \
-  include/linux/device.h \
-    $(wildcard include/config/debug/devres.h) \
-    $(wildcard include/config/devtmpfs.h) \
-    $(wildcard include/config/sysfs/deprecated.h) \
-  include/linux/klist.h \
-  /home/nitin/thesis/linux/arch/x86/include/asm/device.h \
-    $(wildcard include/config/intel/iommu.h) \
-    $(wildcard include/config/amd/iommu.h) \
-  include/linux/pm_wakeup.h \
-  include/linux/dma-direction.h \
-  include/linux/scatterlist.h \
-    $(wildcard include/config/debug/sg.h) \
-  /home/nitin/thesis/linux/arch/x86/include/asm/scatterlist.h \
-  include/asm-generic/scatterlist.h \
-    $(wildcard include/config/need/sg/dma/length.h) \
-  include/linux/mm.h \
-    $(wildcard include/config/sysctl.h) \
-    $(wildcard include/config/stack/growsup.h) \
-    $(wildcard include/config/ksm.h) \
-    $(wildcard include/config/debug/pagealloc.h) \
-    $(wildcard include/config/hugetlbfs.h) \
-  include/linux/debug_locks.h \
-    $(wildcard include/config/debug/locking/api/selftests.h) \
-  include/linux/range.h \
-  include/linux/bit_spinlock.h \
-  include/linux/shrinker.h \
-  /home/nitin/thesis/linux/arch/x86/include/asm/pgtable.h \
-  /home/nitin/thesis/linux/arch/x86/include/asm/pgtable_64.h \
-  /home/nitin/thesis/linux/arch/x86/include/asm/pgtable_64_types.h \
-  include/asm-generic/pgtable.h \
-  include/linux/page-flags.h \
-    $(wildcard include/config/pageflags/extended.h) \
-    $(wildcard include/config/arch/uses/pg/uncached.h) \
-    $(wildcard include/config/memory/failure.h) \
-    $(wildcard include/config/swap.h) \
-    $(wildcard include/config/s390.h) \
-  include/linux/huge_mm.h \
-  include/linux/vmstat.h \
-    $(wildcard include/config/vm/event/counters.h) \
-  include/linux/vm_event_item.h \
-  include/linux/hrtimer.h \
-    $(wildcard include/config/high/res/timers.h) \
-    $(wildcard include/config/timerfd.h) \
-  include/linux/timerqueue.h \
-  include/linux/dma-mapping.h \
-    $(wildcard include/config/has/dma.h) \
-    $(wildcard include/config/have/dma/attrs.h) \
-    $(wildcard include/config/need/dma/map/state.h) \
-  include/linux/dma-attrs.h \
-  include/linux/bug.h \
-  /home/nitin/thesis/linux/arch/x86/include/asm/dma-mapping.h \
-    $(wildcard include/config/isa.h) \
-  include/linux/dma-debug.h \
-    $(wildcard include/config/dma/api/debug.h) \
-  /home/nitin/thesis/linux/arch/x86/include/asm/swiotlb.h \
-    $(wildcard include/config/swiotlb.h) \
-  include/linux/swiotlb.h \
-  include/asm-generic/dma-coherent.h \
-    $(wildcard include/config/have/generic/dma/coherent.h) \
-  include/asm-generic/dma-mapping-common.h \
-  include/net/netlink.h \
-  include/net/net_namespace.h \
-    $(wildcard include/config/ipv6.h) \
-    $(wildcard include/config/ip/dccp.h) \
-    $(wildcard include/config/netfilter.h) \
-    $(wildcard include/config/wext/core.h) \
-    $(wildcard include/config/net.h) \
-  include/net/netns/core.h \
-  include/net/netns/mib.h \
-    $(wildcard include/config/xfrm/statistics.h) \
-  include/net/snmp.h \
-  include/linux/snmp.h \
-  include/linux/u64_stats_sync.h \
-  include/net/netns/unix.h \
-  include/net/netns/packet.h \
-  include/linux/rculist.h \
-  include/net/netns/ipv4.h \
-    $(wildcard include/config/ip/multiple/tables.h) \
-    $(wildcard include/config/security.h) \
-    $(wildcard include/config/ip/mroute.h) \
-    $(wildcard include/config/ip/mroute/multiple/tables.h) \
-  include/net/inet_frag.h \
-  include/net/netns/ipv6.h \
-    $(wildcard include/config/ipv6/multiple/tables.h) \
-    $(wildcard include/config/ipv6/mroute.h) \
-    $(wildcard include/config/ipv6/mroute/multiple/tables.h) \
-  include/net/dst_ops.h \
-  include/linux/percpu_counter.h \
-  include/net/netns/dccp.h \
-  include/net/netns/x_tables.h \
-    $(wildcard include/config/bridge/nf/ebtables.h) \
-  include/linux/netfilter.h \
-    $(wildcard include/config/netfilter/debug.h) \
-    $(wildcard include/config/nf/nat/needed.h) \
-  include/linux/if.h \
-  include/linux/hdlc/ioctl.h \
-  include/linux/in.h \
-  include/linux/in6.h \
-  include/net/flow.h \
-  include/linux/proc_fs.h \
-    $(wildcard include/config/proc/devicetree.h) \
-    $(wildcard include/config/proc/kcore.h) \
-  include/linux/fs.h \
-    $(wildcard include/config/fs/posix/acl.h) \
-    $(wildcard include/config/quota.h) \
-    $(wildcard include/config/fsnotify.h) \
-    $(wildcard include/config/ima.h) \
-    $(wildcard include/config/epoll.h) \
-    $(wildcard include/config/debug/writecount.h) \
-    $(wildcard include/config/file/locking.h) \
-    $(wildcard include/config/auditsyscall.h) \
-    $(wildcard include/config/block.h) \
-    $(wildcard include/config/fs/xip.h) \
-    $(wildcard include/config/migration.h) \
-  include/linux/limits.h \
-  include/linux/blk_types.h \
-    $(wildcard include/config/blk/dev/integrity.h) \
-  include/linux/kdev_t.h \
-  include/linux/dcache.h \
-  include/linux/rculist_bl.h \
-  include/linux/list_bl.h \
-  include/linux/path.h \
-  include/linux/radix-tree.h \
-  include/linux/pid.h \
-  include/linux/semaphore.h \
-  include/linux/fiemap.h \
-  include/linux/quota.h \
-    $(wildcard include/config/quota/netlink/interface.h) \
-  include/linux/dqblk_xfs.h \
-  include/linux/dqblk_v1.h \
-  include/linux/dqblk_v2.h \
-  include/linux/dqblk_qtree.h \
-  include/linux/nfs_fs_i.h \
-  include/linux/nfs.h \
-  include/linux/sunrpc/msg_prot.h \
-  include/linux/inet.h \
-  include/linux/magic.h \
-  include/net/netns/conntrack.h \
-  include/linux/list_nulls.h \
-  include/net/netns/xfrm.h \
-  include/linux/xfrm.h \
-  include/linux/seq_file_net.h \
-  include/linux/seq_file.h \
-  /home/nitin/thesis/modules/netlink_kernel_module.c \
+  include/linux/vermagic.h \
+  include/generated/utsrelease.h \
 
-/home/nitin/thesis/modules/read_inode_list.o: $(deps_/home/nitin/thesis/modules/read_inode_list.o)
+/home/nitin/thesis/modules/netlink_test_module.mod.o: $(deps_/home/nitin/thesis/modules/netlink_test_module.mod.o)
 
-$(deps_/home/nitin/thesis/modules/read_inode_list.o):
+$(deps_/home/nitin/thesis/modules/netlink_test_module.mod.o):
