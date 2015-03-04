@@ -48,7 +48,7 @@ enum {
 
 /*
 
-/* an echo command, receives a message, prints it and sends another message back 
+* an echo command, receives a message, prints it and sends another message back 
 int doc_exmpl_echo(struct sk_buff *skb_2, struct genl_info *info)
 {
 
@@ -61,7 +61,7 @@ int doc_exmpl_echo(struct sk_buff *skb_2, struct genl_info *info)
         if (info == NULL)
                 goto out;
   
-        /*for each attribute there is an index in info->attrs which points to a nlattr structure
+        *for each attribute there is an index in info->attrs which points to a nlattr structure
          *in this structure the data is given
          
         na = info->attrs[DOC_EXMPL_A_MSG];
@@ -75,14 +75,14 @@ int doc_exmpl_echo(struct sk_buff *skb_2, struct genl_info *info)
 	else
 		printk("no info->attrs %i\n", DOC_EXMPL_A_MSG);
 
-        /* send a message back*/
-        /* allocate some memory, since the size is not yet known use NLMSG_GOODSIZE	
+        * send a message back*
+        * allocate some memory, since the size is not yet known use NLMSG_GOODSIZE	
         skb = genlmsg_new(NLMSG_GOODSIZE, GFP_KERNEL);
 	if (skb == NULL)
 		goto out;
 
-	/* create the message headers */
-        /* arguments of genlmsg_put: 
+	 create the message headers *
+        * arguments of genlmsg_put: 
            struct sk_buff *, 
            int (sending) pid, 
            int sequence number, 
@@ -95,15 +95,15 @@ int doc_exmpl_echo(struct sk_buff *skb_2, struct genl_info *info)
 		rc = -ENOMEM;
 		goto out;
 	}
-	/* add a DOC_EXMPL_A_MSG attribute (actual value to be sent) 
+	* add a DOC_EXMPL_A_MSG attribute (actual value to be sent) 
 	rc = nla_put_string(skb, DOC_EXMPL_A_MSG, "hello world from kernel space");
 	if (rc != 0)
 		goto out;
 	
-        /* finalize the message 
+        * finalize the message 
 	genlmsg_end(skb, msg_head);
 
-        /* send the message back *
+        * send the message back *
 	//rc = genlmsg_unicast(skb,info->snd_pid );
 	rc = genlmsg_unicast(genl_info_net(info), skb,info->snd_pid );
 	if (rc != 0)
@@ -115,7 +115,7 @@ int doc_exmpl_echo(struct sk_buff *skb_2, struct genl_info *info)
   
       return 0;
 }
-/* commands: mapping between the command enumeration and the actual function*
+* commands: mapping between the command enumeration and the actual function*
 struct genl_ops doc_exmpl_gnl_ops_echo = {
 	.cmd = DOC_EXMPL_C_ECHO,
 	.flags = 0,
@@ -155,13 +155,13 @@ static void __exit gnKernel_exit(void)
 {
         int ret;
         printk("EXIT GENERIC NETLINK EXEMPLE MODULE\n");
-        /*unregister the functions
+        *unregister the functions
 	ret = genl_unregister_ops(&doc_exmpl_gnl_family, &doc_exmpl_gnl_ops_echo);
 	if(ret != 0){
                 printk("unregister ops: %i\n",ret);
                 return;
         }
-        /*unregister the family
+        *unregister the family
 	ret = genl_unregister_family(&doc_exmpl_gnl_family);
 	if(ret !=0){
                 printk("unregister family %i\n",ret);

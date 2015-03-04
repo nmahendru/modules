@@ -18,7 +18,13 @@
 #define RETURN_DEVICE_NAME "/dev/my_char_dev_return"
 #define CHAR_DEVICE_NAME "/dev/my_char_dev"
 
-using namespace std;
+//#################################################################################################
+void replace_0_with_1(char * buf , int len){
+	for(int i = 0 ; i < len ; i++){
+		if(buf[i] == '\0') buf[i] = (char)1 ;
+	}	
+}
+//#################################################################################################
 
 /**************************************************************************************************
 Netlink API code. This will be used to communicate with the kernle after this application is 
@@ -70,7 +76,7 @@ void split(char * line, char * delims , struct token_class * t , int * nTokens)
 
 	printf("Number of tokens read = %d\n" , *nTokens);
 }
-void write_line_to_device(s_hash * input , int size){
+void write_line_to_device(struct token_class* input , int size){
 	/* C++ version does not work for c strings
 	ofstream outfile(RETURN_DEVICE_NAME);
 	outfile << input->inode_number;
@@ -82,14 +88,15 @@ void write_line_to_device(s_hash * input , int size){
 	FILE * fp = fopen(CHAR_DEVICE_NAME , "w");
 	char temp_buff[1023];
 	char * temp = temp_buff;
-	int  bytes_written = sprintf(temp_buff , "%d%lu" , size , input->inode_number);
+	int  bytes_written = sprintf(temp_buff , "%d" , size);
 
-	for(int i = 0 ; i < size ; i++){
-		temp += bytes_written;
-		bytes_written = sprintf(temp , "%s%c" , input->values[i] , (char)1);
+	for(int i = 0 ; i <= size ; i++){
+		temp += bytes_written + 1;
+		bytes_written = sprintf(temp , "%s" , input->tokens[i] );
 	}
-	temp[bytes_written] = '\0';
-
+	temp += bytes_written + 1;
+	replace_0_with_1(temp_buff, temp - temp_buff);
+	temp[0] = '\0';
 	fprintf( fp , "%s", temp_buff);
 	printf("user program wrote = %s\n" , temp_buff);
 	fclose(fp);
@@ -144,17 +151,11 @@ while(1) {//The loop to read the file begins
             if(!fgets(line ,1023 , infile)) break; // break out of the loop is lines to read finish
             int nTokens = 0;
 			split(line , delims , &t , &nTokens);
-			tokens = t.tokens;
-			temp = (s_hash *) malloc(sizeof(s_hash));
-			temp->inode_number = strtol(tokens[0] , NULL , 10);
-		
-			int numSids = nTokens - 1;
-			temp->values = (char **)malloc(sizeof(char *) * numSids);
-			for(int i = 0 ; i < numSids ; i++){
-				temp->values[i] = tokens[i+1];
-			}
+			
+			
+			
 //write one line to the character device			
-			write_line_to_device(temp, numSids);
+			write_line_to_device(&t, nTokens - 1);
 //write a signal value to the character device to allow kernel to read
 			//write_signal_for_kernel_to_read();
 //check if kernel has read the signal

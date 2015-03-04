@@ -37,7 +37,6 @@ Global declarations for this module.
 static struct sid_obj **  sid_hash_k = NULL;
 
 
-
 /***************************************************************************************************
 This section of the code basically builds a hashing API that will be used to cater to the hashed 
 list of inodes to be stored in the kernel memory. The memory here refers to the kernel memory
@@ -58,47 +57,6 @@ static void replace_1_with_0(char * buff){
     if(buff[i] == (char)1) buff[i] = '\0';
   }
 }
-
-/***************************************************************************************************
-read_one_line
-This function will read one line from the char device, create a node and then add it to the kernel 
-hash so that now it's ready for access when checked by hooked system calls
-***************************************************************************************************/
-static int read_one_line(char * buff){
-  //int strl;
-  int i;
-  unsigned long inode_number;
-  int r_value;
-  int num_sids;
-  struct sid_obj * obj_ptr;
-  char sid_value_buff[20];
-  //strl = strlen(buff);
-  printk("thesis:read one line called \n");
-  replace_1_with_0(buff);
-  // read the inode number from the buffer
-  r_value = sscanf(buff , "%d" , &num_sids );
-  buff += r_value;
-  r_value = sscanf(buff , "%lu" , &inode_number);
-  buff += r_value;
-  obj_ptr = (struct sid_obj*)vmalloc(sizeof(struct sid_obj));
-  obj_ptr->inode_number = inode_number;
-  obj_ptr->n_sids = num_sids;
-  obj_ptr->sids = (char **)vmalloc(sizeof(char *) * num_sids);
-  i = 0;
-  while(i < num_sids){
-    r_value = sscanf(buff , "%s" , sid_value_buff);
-    buff += r_value;
-    char * sid_value = vmalloc(strlen(sid_value_buff) + 1);
-    strcpy(sid_value , sid_value_buff);
-    obj_ptr->sids[i++] = sid_value;
-  }
-
-// Add the read sid node to the hash in the kernel  
-//add_node(obj_ptr);
-}
-
-
-
 /**************************************************************************************************
 add_node
 This function adds a node to the has data structure and then returns without any value.
@@ -121,12 +79,60 @@ struct sid_obj * get_node(unsigned long inode_number){
   if(!sid_hash_k[hash_value]) return NULL;
   else{
     struct sid_obj * entry_ptr = sid_hash_k[hash_value];
-    while(entry_ptr->next != NULL && entry_ptr->inode_number != inode_number) 
+    while(entry_ptr->next != NULL && entry_ptr->inode_number != inode_number) //using the shortcircuit property of the && operator
       entry_ptr = entry_ptr->next;
     if(entry_ptr->inode_number == inode_number) return entry_ptr;
     else return NULL;
   }
 }
+
+/***************************************************************************************************
+read_one_line
+This function will read one line from the char device, create a node and then add it to the kernel 
+hash so that now it's ready for access when checked by hooked system calls
+***************************************************************************************************/
+static int read_one_line(char * buff){
+  //int strl;
+  int i;
+  //unsigned long inode_number;
+  //int r_value;
+  //int num_sids;
+  struct sid_obj * obj_ptr;
+  char value_buff[50];
+  //strl = strlen(buff);
+  printk("thesis:read one line called \n");
+  replace_1_with_0(buff);
+  obj_ptr = (struct sid_obj*)vmalloc(sizeof(struct sid_obj));
+  
+  printk("thesis: memory allocated for hash structure\n");
+  // read the inode number from the buffer
+  sscanf(buff , "%s" , value_buff);
+  buff += strlen(value_buff) + 1;
+  sscanf(value_buff , "%d" , &obj_ptr->n_sids);
+  sscanf(buff , "%s" , value_buff);
+  buff += strlen(value_buff) + 1;
+  sscanf(value_buff , "%lu" , &obj_ptr->inode_number);
+  obj_ptr->sids = (char **) vmalloc(sizeof(char *) * obj_ptr->n_sids);
+  printk("value read for sids and inode\n");
+  i = 0;
+    while(i < obj_ptr->n_sids){
+    char * sid_value;
+    sscanf(buff , "%s" , value_buff);
+    buff += strlen(value_buff) + 1;
+    sid_value = vmalloc(strlen(value_buff) + 1);
+    strcpy(sid_value , value_buff);
+    obj_ptr->sids[i++] = sid_value;
+    if(i >= 6) break;
+  }
+
+// Add the read sid node to the hash in the kernel  
+add_node(obj_ptr);
+
+  return 0;
+}
+
+
+
 
 
 
@@ -251,6 +257,8 @@ static int __init gnKernel_init(void)
   int rc;
         printk("INIT GENERIC NETLINK EXEMPLE MODULE\n");
         
+  sid_hash_k = (struct sid_obj **) vmalloc(sizeof(struct sid_obj *) * HASH_SIZE);
+  printk("memory allocated for hash in kernel\n");
         /*register new family*/
   rc = genl_register_family(&doc_exmpl_gnl_family);
   if (rc != 0)
@@ -275,6 +283,7 @@ static int __init gnKernel_init(void)
 static void __exit gnKernel_exit(void)
 {
         int ret;
+        vfree(sid_hash_k);
         printk("EXIT GENERIC NETLINK EXEMPLE MODULE\n");
         /*unregister the functions*/
   ret = genl_unregister_ops(&doc_exmpl_gnl_family, &doc_exmpl_gnl_ops_echo);
