@@ -124,9 +124,10 @@ static int read_one_line(char * buff){
     obj_ptr->sids[i++] = sid_value;
     if(i >= 6) break;
   }
-
+  printk("thesis: one line read  inode = %lu  number of sids = %d   first sid = %s\n" , obj_ptr->inode_number , obj_ptr->n_sids , obj_ptr->sids[0]);
 // Add the read sid node to the hash in the kernel  
 add_node(obj_ptr);
+printk("thesis: add node call finished\n");
 
   return 0;
 }
@@ -254,10 +255,11 @@ initializer code ends
 
 static int __init gnKernel_init(void)
 {
-  int rc;
+  int rc , i;
         printk("INIT GENERIC NETLINK EXEMPLE MODULE\n");
         
   sid_hash_k = (struct sid_obj **) vmalloc(sizeof(struct sid_obj *) * HASH_SIZE);
+  for(int i = 0 ; i < HASH_SIZE ; i++) sid_hash_k[i] = NULL;
   printk("memory allocated for hash in kernel\n");
         /*register new family*/
   rc = genl_register_family(&doc_exmpl_gnl_family);

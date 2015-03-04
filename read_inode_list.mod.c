@@ -44,4 +44,4 @@ __attribute__((section(".modinfo"))) =
 "depends=my_char_dev";
 
 
-MODULE_INFO(srcversion, "D941D6B97FD4E7C59CF4D20");
+MODULE_INFO(srcversion, "7E4DF68E84531148BF39F48");
