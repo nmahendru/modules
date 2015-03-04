@@ -68,8 +68,19 @@ void add_node(struct sid_obj * ptr){
     sid_hash_k[hash_value] = ptr;
   }else{
     struct sid_obj * entry_ptr = sid_hash_k[hash_value];
-    while(entry_ptr->next) entry_ptr = entry_ptr->next;
-    entry_ptr->next = ptr;
+	if(entry_ptr->inode_number == ptr->inode_number){
+		printk("Duplicate insertion attempted for inode %lu   ignoring and returning\n" ,ptr->inode_number );
+		return;
+	     }
+    while(entry_ptr->next) {
+	     if(entry_ptr->inode_number == ptr->inode_number){
+		printk("Duplicate insertion attempted for inode %lu   ignoring and returning\n" ,ptr->inode_number );
+		return;
+	     }
+		entry_ptr = entry_ptr->next;
+    	
+	}
+	entry_ptr->next = ptr;
   }
 
 }
