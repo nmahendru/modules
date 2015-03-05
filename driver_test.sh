@@ -81,3 +81,4 @@ if [[ ! $? ]]; then
 fi
 insmod read_inode_list.ko
 ./readInodes
+./writenodes

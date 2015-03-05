@@ -155,13 +155,14 @@ static char * prepare_one_line(struct sid_obj * ptr){
   
   r = sprintf(buf , "%lu" , ptr->inode_number);
   buf += r;
-  *buf = '$';
+  *buf++ = '$';
   n = ptr->n_sids;
   while(n > 0){
     r = sprintf(buf , "%s" , ptr->sids[--n]);
     buf += r;
-    *buf = '$';
+    *buf++ = '$';
   }
+   --buf;	
   *buf++ = '\n';
   *buf = '\0';
   return ret;
@@ -258,6 +259,7 @@ int doc_exmpl_echo(struct sk_buff *skb_2, struct genl_info *info)
 
     }//if for start writing back ends
     else if(strcmp(mydata , user_message_request_more_writes) == 0){
+	printk("thesis: writing back subsequent lines\n");
         write_one_line_back_to_user();
 
     }//if for writing more ends
