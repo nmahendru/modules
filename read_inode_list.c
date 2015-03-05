@@ -31,10 +31,14 @@ oppositte function of the above function
 List of defines used as constants
 **************************************************************************************************/
 #define HASH_SIZE 1000
+#define DEVICE_SIZE 1024
 /**************************************************************************************************
 Global declarations for this module.
 **************************************************************************************************/
 static struct sid_obj **  sid_hash_k = NULL;
+static int is_all_hash_written = 0;
+static int hash_write_index = 0;
+static int hash_list_write_index = 0;
 
 
 /***************************************************************************************************
@@ -143,19 +147,57 @@ printk("thesis: add node call finished\n");
 
   return 0;
 }
+static char * prepare_one_line(struct sid_obj * ptr){
+  char * buf , * ret ;
+  int r , n; 
+  buf = (char *) vmalloc(DEVICE_SIZE);
+  ret = buf;
+  
+  r = sprintf(buf , "%lu" , ptr->inode_number);
+  buf += r;
+  *buf = '$';
+  n = ptr->n_sids;
+  while(n > 0){
+    r = sprintf(buf , "%s" , ptr->sids[--n]);
+    buf += r;
+    *buf = '$';
+  }
+  *buf++ = '\n';
+  *buf = '\0';
+  return ret;
+
+}
+
+static void write_one_line_back_to_user(void){
+  if(hash_write_index >= HASH_SIZE ){ 
+      is_all_hash_written = 1;
+      return;
+    }else if(hash_list_write_index == 0){
+    struct sid_obj * ptr;
+    int n = 0;
+    char * temp;
+    ptr = sid_hash_k[hash_write_index];
+    while(n++ < hash_list_write_index && ptr->next) ptr = ptr->next;
 
 
+    temp = prepare_one_line(ptr);
+    my_char_dev_write_k(temp, strlen(temp));
+    vfree(temp);
+    
+    if(ptr->next) hash_list_write_index++; 
+    else{
+     hash_list_write_index = 0;
+     
+     while(++hash_write_index < HASH_SIZE){
+      ptr = sid_hash_k[hash_write_index];
+      if(ptr) break;
+     }
+     
+    }
 
+   }// hash no yet written fully else. 
+}
 
-
-
-
-
-
-
-/***************************************************************************************************
-Hashing code section ends
-***************************************************************************************************/
  
 
 
@@ -173,6 +215,16 @@ int doc_exmpl_echo(struct sk_buff *skb_2, struct genl_info *info)
   void *msg_head;
   char * mydata;
   char * line_buff ;
+  const char reply_message_init_hash[] = "kernel:read one line";
+  const char reply_message_start_writing[] = "kernel:ok. Wrote first line";
+  const char reply_message_wrote_line[] = "kernel:written";
+  const char reply_message_data_finished[] = "kernel:all data finished";
+  
+
+  const char user_message_start_writing[] = "user:start writing back";
+  const char user_message_request_more_writes[] = "user:write another line please";
+  const char user_message_read_more_lines[] = "user:written one line";
+
   printk("doc example function called\n");
   
         if (info == NULL)
@@ -183,18 +235,33 @@ int doc_exmpl_echo(struct sk_buff *skb_2, struct genl_info *info)
          */
         na = info->attrs[DOC_EXMPL_A_MSG];
         if (na) {
-    mydata = (char *)nla_data(na);
-    if (mydata == NULL)
+      mydata = (char *)nla_data(na);
+    if (mydata == NULL){
       printk("error while receiving data\n");
+      goto out;
+    }
     else
       printk("received: %s\n", mydata);
-    }
-  else
-    printk("no info->attrs %i\n", DOC_EXMPL_A_MSG);
+//#################################################################################################
+//Need to check if the call from userspace is to initialize the hash or write back the hash to user space  
+    if(strcmp(mydata , user_message_start_writing) == 0){
+	printk("thesis: case 1 about to write the first line\n");
+        struct sid_obj * ptr = sid_hash_k[hash_write_index];
+        while(!ptr && hash_write_index < HASH_SIZE) {
+          ptr = sid_hash_k[hash_write_index++];
+        }
+	hash_write_index--;
+        if(hash_write_index >= HASH_SIZE) 
+          is_all_hash_written = 1;
+        else 
+          write_one_line_back_to_user();
 
+    }//if for start writing back ends
+    else if(strcmp(mydata , user_message_request_more_writes) == 0){
+        write_one_line_back_to_user();
 
-
-
+    }//if for writing more ends
+    else if(strcmp(mydata , user_message_read_more_lines) == 0){
 /**********************************************************************************************************
 code for reading one line from the device
 **********************************************************************************************************/
@@ -210,6 +277,22 @@ code for reading one line from the device
 /**********************************************************************************************************
 code for reading one line from the device ends 
 **********************************************************************************************************/
+
+    }//if for writing more ends
+    else{
+//###### BLANk CASE#################################################################################
+
+    }
+
+    }//if na ends
+    else{
+      printk("no info->attrs %i exiting\n", DOC_EXMPL_A_MSG);
+        goto out;
+      }
+
+
+
+
         /* send a message back*/
         /* allocate some memory, since the size is not yet known use NLMSG_GOODSIZE*/ 
         skb = genlmsg_new(NLMSG_GOODSIZE, GFP_KERNEL);
@@ -231,9 +314,46 @@ code for reading one line from the device ends
     goto out;
   }
   /* add a DOC_EXMPL_A_MSG attribute (actual value to be sent) */
-  rc = nla_put_string(skb, DOC_EXMPL_A_MSG, "kernel:read one line");
-  if (rc != 0)
-    goto out;
+
+
+//#################################################################################################
+//Decide what message to send back so that user program takes an action accordingly  
+  if(is_all_hash_written){
+      rc = nla_put_string(skb, DOC_EXMPL_A_MSG, reply_message_data_finished);
+      if (rc != 0)
+        goto out;
+  }
+  else if(strcmp(mydata , user_message_start_writing) == 0){
+      rc = nla_put_string(skb, DOC_EXMPL_A_MSG, reply_message_start_writing);
+      if (rc != 0)
+        goto out;
+
+  }//if for start writing back ends
+  else if(strcmp(mydata , user_message_request_more_writes) == 0){
+      rc = nla_put_string(skb, DOC_EXMPL_A_MSG, reply_message_wrote_line);
+      if (rc != 0)
+        goto out;
+
+      }//if for writing more ends
+  else if(strcmp(mydata , user_message_read_more_lines) == 0){
+    rc = nla_put_string(skb, DOC_EXMPL_A_MSG, reply_message_init_hash);
+    if (rc != 0)
+      goto out;
+
+      }//if for writing more ends
+  else{
+  //###### BLANk CASE#################################################################################
+
+      }
+
+
+
+
+
+
+
+
+  
   
         /* finalize the message */
   genlmsg_end(skb, msg_head);
@@ -245,7 +365,7 @@ code for reading one line from the device ends
     goto out;
   return 0;
 
- out:
+  out:
         printk("an error occured in doc_exmpl_echo:\n");
   
       return 0;
