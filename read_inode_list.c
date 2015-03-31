@@ -54,6 +54,9 @@ struct sid_obj{
   char ** sids;
 };
 
+EXPORT_SYMBOL(sid_hash_k);
+
+
 static void replace_1_with_0(char * buff){
   int strl = strlen(buff);
   int i ;
@@ -66,7 +69,7 @@ add_node
 This function adds a node to the has data structure and then returns without any value.
 
 **************************************************************************************************/
-void add_node(struct sid_obj * ptr){
+void add_node_k(struct sid_obj * ptr){
   int hash_value = ptr->inode_number % HASH_SIZE ;
   if(!sid_hash_k[hash_value]){
     sid_hash_k[hash_value] = ptr;
@@ -89,7 +92,7 @@ void add_node(struct sid_obj * ptr){
 
 }
 
-struct sid_obj * get_node(unsigned long inode_number){
+struct sid_obj * get_node_k(unsigned long inode_number){
   int hash_value = inode_number % HASH_SIZE;
   if(!sid_hash_k[hash_value]) return NULL;
   else{
@@ -100,6 +103,8 @@ struct sid_obj * get_node(unsigned long inode_number){
     else return NULL;
   }
 }
+
+EXPORT_SYMBOL(get_node_k);
 
 /***************************************************************************************************
 read_one_line

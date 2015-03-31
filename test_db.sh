@@ -1,28 +1,4 @@
 #!/bin/bash
-
-
-
-#Below three commands are just to make the character devices that are being used by the two drivers
-
-#cd /dev/
-#mknod my_char_dev c 60 0
-#mknod my_char_dev_return c 61 0
-
-echo "compiling readInodes"
-gcc -g -o readInodes readInodes.cc
-if [[ ! $? ]]; then
-	echo "readInodes compilation failed...exiting"
-	exit
-fi
-
-echo "compiling write nodes"
-g++ -std=c++11 -o writenodes writenodes.cc
-
-if [[ ! $? ]]; then
-	echo "writenodes compilation failed...exiting"
-	exit
-fi
-
 rm -rf my_char_dev my_char_dev_return &> /dev/null
 
 
@@ -70,26 +46,3 @@ if [[ ! $? ]]; then
 fi
 
 cd ..
-
-echo "Making read inode list now"
-
-cp Makefile.read_inode_list Makefile
-make
-if [[ ! $? ]]; then
-	echo " read_inode_list compilation failed...exiting"
-	exit
-fi
-insmod read_inode_list.ko
-
-
-echo "Making interceptor now"
-
-cp Makefile.interceptor Makefile
-make
-if [[ ! $? ]]; then
-	echo " read_inode_list compilation failed...exiting"
-	exit
-fi
-insmod interceptor.ko
-#./readInodes
-#./writenodes
