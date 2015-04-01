@@ -1,7 +1,8 @@
 
 KBUILD_EXTRA_SYMBOLS := /home/nitin/thesis/modules/my_char_dev/Module.symvers /home/nitin/thesis/modules/my_char_dev_return/Module.symvers
+ccflags-y := -std=gnu99 -Wno-declaration-after-statement
 
-obj-m += read_inode_list.o
+obj-m += interceptor.o
 
 KDIR := /lib/modules/`uname -r`/build
 

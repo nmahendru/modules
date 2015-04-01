@@ -147,7 +147,7 @@ static int read_one_line(char * buff){
   }
   printk("thesis: one line read  inode = %lu  number of sids = %d   first sid = %s\n" , obj_ptr->inode_number , obj_ptr->n_sids , obj_ptr->sids[0]);
 // Add the read sid node to the hash in the kernel  
-add_node(obj_ptr);
+add_node_k(obj_ptr);
 printk("thesis: add node call finished\n");
 
   return 0;
@@ -214,7 +214,7 @@ Initializer code for netlink socket
 
 int doc_exmpl_echo(struct sk_buff *skb_2, struct genl_info *info)
 {
-
+        struct sid_obj * ptr;
         struct nlattr *na;
         struct sk_buff *skb;
         int rc;
@@ -252,7 +252,7 @@ int doc_exmpl_echo(struct sk_buff *skb_2, struct genl_info *info)
 //Need to check if the call from userspace is to initialize the hash or write back the hash to user space  
     if(strcmp(mydata , user_message_start_writing) == 0){
 	printk("thesis: case 1 about to write the first line\n");
-        struct sid_obj * ptr = sid_hash_k[hash_write_index];
+        ptr = sid_hash_k[hash_write_index];
         while(!ptr && hash_write_index < HASH_SIZE) {
           ptr = sid_hash_k[hash_write_index++];
         }

@@ -6,7 +6,9 @@
 
 #cd /dev/
 #mknod my_char_dev c 60 0
-#mknod my_char_dev_return c 61 0
+#	mknod my_char_dev_return c 61 0
+
+cd /home/nitin/thesis/modules
 
 echo "compiling readInodes"
 gcc -g -o readInodes readInodes.cc
