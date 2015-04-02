@@ -1,0 +1,2 @@
+all:
+	gcc add_sid.c -o add_sid

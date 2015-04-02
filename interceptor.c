@@ -113,10 +113,10 @@ int check_sid_in_list(char * input){
 
 
 //READ system call overridden
-asmlinkage long (*ref_sys_read)(unsigned int fd, char __user *buf, size_t count); //1
-asmlinkage long (*ref_sys_write)(unsigned int fd, char __user *buf, size_t count); //2
+/*asmlinkage long (*ref_sys_read)(unsigned int fd, char __user *buf, size_t count); //1
+asmlinkage long (*ref_sys_write)(unsigned int fd, char __user *buf, size_t count); //2 */
 asmlinkage long (*ref_sys_open)(const char* filename, int flags, int mode); //3
-asmlinkage long (*ref_sys_close)(unsigned int fd); //4
+/*asmlinkage long (*ref_sys_close)(unsigned int fd); //4
 asmlinkage long (*ref_sys_link)(const char * oldname, const char * newname); //5
 asmlinkage long (*ref_sys_unlink)(const char  * pathname); //6
 asmlinkage long (*ref_sys_chdir)(const char * filename); //7
@@ -149,10 +149,11 @@ asmlinkage long (*ref_sys_writev)(int fd, const struct iovec *iov, int iovcnt); 
 asmlinkage long (*ref_sys_chown)(const char *pathname, uid_t owner, gid_t group); //29
 
 //asmlinkage long (*ref_sys_getpid)(void);
-
+*/
 asmlinkage long (*ref_sys_manage_sids)(int action , char * input , char * output , int * rValue);
 
 asmlinkage long new_sys_manage_sids(int action , char * input , char * output , int * rValue){
+	printk("thesis: manage sids called %s\n" , input);
 	switch(action){
 // Add SID		
 		case 1:
@@ -174,7 +175,7 @@ asmlinkage long new_sys_manage_sids(int action , char * input , char * output , 
 }
 
 
-
+/*
 asmlinkage long new_sys_chown(const char *pathname, uid_t owner, gid_t group){
 	long ret;
 	struct sid_list *ptr  = NULL;
@@ -233,7 +234,7 @@ asmlinkage long new_sys_pwrite(int fd, const void *buf, size_t count, off_t offs
 		//printk(KERN_INFO "thesis_log|||sys_call_name=sys_pwrite|||process_id=%d|||executable=%s|||filename=%s\n", current->pid , current->comm , realpath);
 		return ret;
 }
-*/
+
 asmlinkage long new_sys_writev(int fd, const struct iovec *iov, int iovcnt){
 	long ret;
 	struct file *file;
@@ -298,7 +299,7 @@ asmlinkage long new_sys_readv(int fd, const struct iovec *iov, int iovcnt){
 		return ret;
 
 }
-*/
+
 asmlinkage long new_sys_fsync(int fd){
 	long ret;
 	struct file *file;
@@ -576,7 +577,7 @@ asmlinkage long new_sys_write(unsigned int fd, char __user *buf, size_t count)
 }
 
 
-
+*/
 //3
 asmlinkage long new_sys_open(const char* filename, int flags, int mode)
 {
@@ -592,11 +593,11 @@ asmlinkage long new_sys_open(const char* filename, int flags, int mode)
 		umh_test();
 		
 	}
-	printk(KERN_INFO "thesis: open called for %s\n" , filename);
+	//printk(KERN_INFO "thesis: open called for %s\n" , filename);
 		//printk(KERN_INFO "thesis_log|||sys_call_name=sys_open|||process_id=%d|||executable=%s|||file_opened=%s\n", current->pid, current->comm ,  filename);
 		return ret;
 }
-
+/*
 //4
 asmlinkage long new_sys_close(unsigned int fd)
 {
@@ -658,7 +659,7 @@ asmlinkage long new_sys_chdir(const char * filename)
 
 
 
-
+*/
 static unsigned long **aquire_sys_call_table(void)
 {
 	unsigned long int offset = PAGE_OFFSET;
@@ -686,15 +687,15 @@ static int __init interceptor_start(void)
 	write_cr0(original_cr0 & ~0x00010000);
 
 	//ref_sys_getpid = (void *)sys_call_table[__NR_getpid];
-	ref_sys_readlink = (void *)sys_call_table[__NR_readlink];
+/*	ref_sys_readlink = (void *)sys_call_table[__NR_readlink];
 	
 	ref_sys_read = (void *)sys_call_table[__NR_read];
 	sys_call_table[__NR_read] = (unsigned long *)new_sys_read;
 	ref_sys_write = (void *)sys_call_table[__NR_write];
-	sys_call_table[__NR_write] = (unsigned long *)new_sys_write;
+	sys_call_table[__NR_write] = (unsigned long *)new_sys_write; */
 	ref_sys_open = (void *)sys_call_table[__NR_open];
 	sys_call_table[__NR_open] = (unsigned long *)new_sys_open;
-	ref_sys_close = (void *)sys_call_table[__NR_close];
+	/*ref_sys_close = (void *)sys_call_table[__NR_close];
 	sys_call_table[__NR_close] = (unsigned long *)new_sys_close;
 	ref_sys_link = (void *)sys_call_table[__NR_link];
 	sys_call_table[__NR_link] = (unsigned long *)new_sys_link;
@@ -726,7 +727,7 @@ static int __init interceptor_start(void)
 	//ref_sys_pwrite = (void *)sys_call_table[__NR_pwrite];
 	ref_sys_chown = (void *)sys_call_table[__NR_chown];
 	//ref_sys_getpid = (void *)sys_call_table[__NR_getpid];
-	ref_sys_manage_sids = (void *)sys_call_table[__NR_manage_sids];
+	
 
 
 	sys_call_table[__NR_mknod] = (unsigned long *)new_sys_mknod;
@@ -753,6 +754,8 @@ static int __init interceptor_start(void)
 	//sys_call_table[__NR_pwrite] = (unsigned long *)new_sys_pwrite;
 	sys_call_table[__NR_chown] = (unsigned long *)new_sys_chown;
 	//sys_call_table[__NR_getpid] = (unsigned long *)new_sys_getpid;
+	*/
+	ref_sys_manage_sids = (void *)sys_call_table[__NR_manage_sids];
 	sys_call_table[__NR_manage_sids] = (unsigned long *)new_sys_manage_sids;
 	write_cr0(original_cr0);
 
@@ -767,10 +770,10 @@ static void __exit interceptor_end(void)
 	}
 				
 	write_cr0(original_cr0 & ~0x00010000);
-	sys_call_table[__NR_read] = (unsigned long *)ref_sys_read;
-	sys_call_table[__NR_write] = (unsigned long *)ref_sys_write;
+	/*sys_call_table[__NR_read] = (unsigned long *)ref_sys_read;
+	sys_call_table[__NR_write] = (unsigned long *)ref_sys_write;*/
 	sys_call_table[__NR_open] = (unsigned long *)ref_sys_open;
-	sys_call_table[__NR_close] = (unsigned long *)ref_sys_close; 
+	/*sys_call_table[__NR_close] = (unsigned long *)ref_sys_close; 
 	sys_call_table[__NR_link] = (unsigned long *)ref_sys_link; 
 	sys_call_table[__NR_unlink] = (unsigned long *)ref_sys_unlink; 
 	sys_call_table[__NR_chdir] = (unsigned long *)ref_sys_chdir; 
@@ -797,7 +800,7 @@ static void __exit interceptor_end(void)
 	//sys_call_table[__NR_pread] =  (unsigned long * ) ref_sys_pread;
 	//sys_call_table[__NR_pwrite] =  (unsigned long * ) ref_sys_pwrite;
 	sys_call_table[__NR_chown] =  (unsigned long * ) ref_sys_chown;
-	//sys_call_table[__NR_getpid] =  (unsigned long * ) ref_sys_getpid;
+	//sys_call_table[__NR_getpid] =  (unsigned long * ) ref_sys_getpid;*/
 	sys_call_table[__NR_manage_sids] =  (unsigned long * ) ref_sys_manage_sids;
 	write_cr0(original_cr0);
 						
