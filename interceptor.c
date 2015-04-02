@@ -36,14 +36,16 @@
 #include <linux/sched.h>
 #include <linux/fdtable.h>
 #include <linux/slab.h>
-//#include "interceptor.h"
 #include <linux/list.h>
 #define DB_INSERT_UTIL "/home/nitin/thesis/modules/db_insert.py"
 #include "char_dev.h"
+#include <linux/unistd.h>
 unsigned long **sys_call_table;
 unsigned long original_cr0;
 
 LIST_HEAD(sid_linked_list);
+
+MODULE_LICENSE("GPL");
 
 static int umh_test(void){
   struct subprocess_info *sub_info;
@@ -88,12 +90,12 @@ void remove_sid_from_list(char * input){
 			break;
 		}
 	
-	if(flag){
-		list_del(&ptr->my_list);
-		kfree(ptr -> sid);
-		kfree(ptr);
+		if(flag){
+			list_del(&ptr->my_list);
+			kfree(ptr -> sid);
+			kfree(ptr);
+		}
 	}
-
 }
 
 
@@ -137,16 +139,16 @@ asmlinkage long (*ref_sys_fchmod)(int fd, mode_t mode); //21
 asmlinkage long (*ref_sys_fstatfs)(int fd, struct statfs *buf);//22
 asmlinkage long (*ref_sys_statfs)(const char *path, struct statfs *buf); //23
 asmlinkage long (*ref_sys_fsync)(int fd); //23
-asmlinkage long (*ref_sys_llseek)(unsigned int fd, unsigned long offset_high,
-                   unsigned long offset_low, loff_t *result,
-                   unsigned int whence); //24
+//asmlinkage long (*ref_sys_llseek)(unsigned int fd, unsigned long offset_high,
+//                   unsigned long offset_low, loff_t *result,
+//`                   unsigned int whence); //24
 asmlinkage long (*ref_sys_readv)(int fd, const struct iovec *iov, int iovcnt); //25
 asmlinkage long (*ref_sys_writev)(int fd, const struct iovec *iov, int iovcnt); //26
-asmlinkage long (*ref_sys_pread)(int fd, void *buf, size_t count, off_t offset); //27
-asmlinkage long (*ref_sys_pwrite)(int fd, const void *buf, size_t count, off_t offset); //28
+//asmlinkage long (*ref_sys_pread)(int fd, void *buf, size_t count, off_t offset); //27
+//asmlinkage long (*ref_sys_pwrite)(int fd, const void *buf, size_t count, off_t offset); //28
 asmlinkage long (*ref_sys_chown)(const char *pathname, uid_t owner, gid_t group); //29
 
-asmlinkage long (*ref_sys_getpid)(void);
+//asmlinkage long (*ref_sys_getpid)(void);
 
 asmlinkage long (*ref_sys_manage_sids)(int action , char * input , char * output , int * rValue);
 
@@ -193,7 +195,7 @@ asmlinkage long new_sys_chown(const char *pathname, uid_t owner, gid_t group){
 		return ret;
 }
 
-asmlinkage long new_sys_pread(int fd, void *buf, size_t count, off_t offset){
+/*asmlinkage long new_sys_pread(int fd, void *buf, size_t count, off_t offset){
 	long ret;
 	struct file *file;
 	char fbuf[200], *realpath;
@@ -231,7 +233,7 @@ asmlinkage long new_sys_pwrite(int fd, const void *buf, size_t count, off_t offs
 		//printk(KERN_INFO "thesis_log|||sys_call_name=sys_pwrite|||process_id=%d|||executable=%s|||filename=%s\n", current->pid , current->comm , realpath);
 		return ret;
 }
-
+*/
 asmlinkage long new_sys_writev(int fd, const struct iovec *iov, int iovcnt){
 	long ret;
 	struct file *file;
@@ -274,7 +276,7 @@ asmlinkage long new_sys_readv(int fd, const struct iovec *iov, int iovcnt){
 
 
 
-asmlinkage long new_sys_llseek(unsigned int fd, unsigned long offset_high,
+/*asmlinkage long new_sys_llseek(unsigned int fd, unsigned long offset_high,
                    unsigned long offset_low, loff_t *result,
                    unsigned int whence){
 	long ret;
@@ -296,7 +298,7 @@ asmlinkage long new_sys_llseek(unsigned int fd, unsigned long offset_high,
 		return ret;
 
 }
-
+*/
 asmlinkage long new_sys_fsync(int fd){
 	long ret;
 	struct file *file;
@@ -413,7 +415,7 @@ asmlinkage long new_sys_chroot(const char *path){
 
 asmlinkage long new_sys_rmdir(const char *pathname){
 	long ret;
-	ret = ref_sys_rmdir(const char *pathname);
+	ret = ref_sys_rmdir(pathname);
 	if (strcmp(current->comm , "rsyslogd") == 0 || strcmp(current->comm , "in:imklog") == 0 )
 			return ret;
 
@@ -423,7 +425,7 @@ asmlinkage long new_sys_rmdir(const char *pathname){
 
 asmlinkage long new_sys_mkdir(const char *pathname, mode_t mode){
 	long ret;
-	ret = ref_sys_mkdir(const char *pathname, mode_t mode);
+	ret = ref_sys_mkdir(pathname, mode);
 	if (strcmp(current->comm , "rsyslogd") == 0 || strcmp(current->comm , "in:imklog") == 0 )
 			return ret;
 
@@ -434,9 +436,7 @@ asmlinkage long new_sys_mkdir(const char *pathname, mode_t mode){
 
 asmlinkage long new_sys_access(const char *pathname, int mode){
 	long ret;
-	ret = ref_sys_access(source,target,
-          filesystemtype, mountflags,
-          data);
+	ret = ref_sys_access(pathname , mode);
 	if (strcmp(current->comm , "rsyslogd") == 0 || strcmp(current->comm , "in:imklog") == 0 )
 			return ret;
 
@@ -457,9 +457,7 @@ asmlinkage long new_sys_fstat(int fd, struct stat *buf){
 
 	struct file *file;
 	char fbuf[200], *realpath;
-	ret = ref_sys_fstat(source,target,
-          filesystemtype, mountflags,
-          data);
+	ret = ref_sys_fstat(fd , buf);
 
 	file = fcheck(fd);
 		if(!file){
@@ -475,7 +473,7 @@ asmlinkage long new_sys_fstat(int fd, struct stat *buf){
 		return ret;
 }
 
-asmlinkage long new_sys_mount)(const char *source, const char *target,
+asmlinkage long new_sys_mount(const char *source, const char *target,
           const char *filesystemtype, unsigned long mountflags,
           const void *data){
 	long ret;
@@ -522,7 +520,7 @@ asmlinkage long new_sys_lchown(const char *path, uid_t owner, gid_t group){
 
 		return ret;
 }
-asmlinkage long new ref_sys_mknod(const char *pathname, mode_t mode, dev_t dev){
+asmlinkage long new_sys_mknod(const char *pathname, mode_t mode, dev_t dev){
 	long ret;
 	ret = ref_sys_mknod(pathname , mode , dev);
 	if (strcmp(current->comm , "rsyslogd") == 0 || strcmp(current->comm , "in:imklog") == 0 )
@@ -589,11 +587,12 @@ asmlinkage long new_sys_open(const char* filename, int flags, int mode)
 		if (strcmp(current->comm , "rsyslogd") == 0 || strcmp(current->comm , "in:imklog") == 0 )
 			return ret;
 		list_for_each_entry(ptr , &sid_linked_list , my_list){
-		sprintf(buf , "%s$%s$%s" , pathname , ptr->sid , "OPEN");
+		sprintf(buf , "%s$%s$%s" , filename , ptr->sid , "OPEN");
 		my_char_dev_write_k(buf , strlen(buf));
 		umh_test();
+		
 	}
-
+	printk(KERN_INFO "thesis: open called for %s\n" , filename);
 		//printk(KERN_INFO "thesis_log|||sys_call_name=sys_open|||process_id=%d|||executable=%s|||file_opened=%s\n", current->pid, current->comm ,  filename);
 		return ret;
 }
@@ -659,17 +658,6 @@ asmlinkage long new_sys_chdir(const char * filename)
 
 
 
-/*
-//8
-asmlinkage long new_sys_write(unsigned int fd, char __user *buf, size_t count)
-{
-		long ret;
-		ret = ref_sys_write(fd, buf, count);
-		if(count == 1 && fd == 0)
-		//printk(KERN_INFO "sys_read|||%d|||\n",getpid());
-		return ret;
-}
-*/
 
 static unsigned long **aquire_sys_call_table(void)
 {
@@ -697,7 +685,7 @@ static int __init interceptor_start(void)
 
 	write_cr0(original_cr0 & ~0x00010000);
 
-	ref_sys_getpid = (void *)sys_call_table[__NR_getpid];
+	//ref_sys_getpid = (void *)sys_call_table[__NR_getpid];
 	ref_sys_readlink = (void *)sys_call_table[__NR_readlink];
 	
 	ref_sys_read = (void *)sys_call_table[__NR_read];
@@ -715,57 +703,57 @@ static int __init interceptor_start(void)
 	ref_sys_chdir = (void *)sys_call_table[__NR_chdir];
 	sys_call_table[__NR_chdir] = (unsigned long *)new_sys_chdir;
 	ref_sys_mknod = (void *)sys_call_table[__NR_mknod];
-ref_sys_lchown = (void *)sys_call_table[__NR_lchown];
-ref_sys_lseek = (void *)sys_call_table[__NR_lseek];
-ref_sys_mount = (void *)sys_call_table[__NR_mount];
-ref_sys_fstat = (void *)sys_call_table[__NR_fstat];
-ref_sys_access = (void *)sys_call_table[__NR_access];
-ref_sys_sync = (void *)sys_call_table[__NR_sync];
-ref_sys_mkdir = (void *)sys_call_table[__NR_mkdir];
-ref_sys_rmdir = (void *)sys_call_table[__NR_rmdir];
-ref_sys_chroot = (void *)sys_call_table[__NR_chroot];
-ref_sys_symlink = (void *)sys_call_table[__NR_symlink];
-ref_sys_lstat = (void *)sys_call_table[__NR_lstat];
-ref_sys_readlink = (void *)sys_call_table[__NR_readlink];
-ref_sys_fchmod = (void *)sys_call_table[__NR_fchmod];
-ref_sys_fstatfs = (void *)sys_call_table[__NR_fstatfs];
-ref_sys_statfs = (void *)sys_call_table[__NR_statfs];
-ref_sys_fsync = (void *)sys_call_table[__NR_fsync];
-ref_sys_llseek = (void *)sys_call_table[__NR_llseek];
-ref_sys_readv = (void *)sys_call_table[__NR_readv];
-ref_sys_writev = (void *)sys_call_table[__NR_writev];
-ref_sys_pread = (void *)sys_call_table[__NR_pread];
-ref_sys_pwrite = (void *)sys_call_table[__NR_pwrite];
-ref_sys_chown = (void *)sys_call_table[__NR_chown];
-ref_sys_getpid = (void *)sys_call_table[__NR_getpid];
-ref_sys_manage_sids = (void *)sys_call_table[__NR_manage_sids];
+	ref_sys_lchown = (void *)sys_call_table[__NR_lchown];
+	ref_sys_lseek = (void *)sys_call_table[__NR_lseek];
+	ref_sys_mount = (void *)sys_call_table[__NR_mount];
+	ref_sys_fstat = (void *)sys_call_table[__NR_fstat];
+	ref_sys_access = (void *)sys_call_table[__NR_access];
+	ref_sys_sync = (void *)sys_call_table[__NR_sync];
+	ref_sys_mkdir = (void *)sys_call_table[__NR_mkdir];
+	ref_sys_rmdir = (void *)sys_call_table[__NR_rmdir];
+	ref_sys_chroot = (void *)sys_call_table[__NR_chroot];
+	ref_sys_symlink = (void *)sys_call_table[__NR_symlink];
+	ref_sys_lstat = (void *)sys_call_table[__NR_lstat];
+	ref_sys_readlink = (void *)sys_call_table[__NR_readlink];
+	ref_sys_fchmod = (void *)sys_call_table[__NR_fchmod];
+	ref_sys_fstatfs = (void *)sys_call_table[__NR_fstatfs];
+	ref_sys_statfs = (void *)sys_call_table[__NR_statfs];
+	ref_sys_fsync = (void *)sys_call_table[__NR_fsync];
+	//ref_sys_llseek = (void *)sys_call_table[__NR_llseek];
+	ref_sys_readv = (void *)sys_call_table[__NR_readv];
+	ref_sys_writev = (void *)sys_call_table[__NR_writev];
+	//ref_sys_pread = (void *)sys_call_table[__NR_pread];
+	//ref_sys_pwrite = (void *)sys_call_table[__NR_pwrite];
+	ref_sys_chown = (void *)sys_call_table[__NR_chown];
+	//ref_sys_getpid = (void *)sys_call_table[__NR_getpid];
+	ref_sys_manage_sids = (void *)sys_call_table[__NR_manage_sids];
 
 
-sys_call_table[__NR_mknod] = (unsigned long *)new_sys_mknod;
-sys_call_table[__NR_lchown] = (unsigned long *)new_sys_lchown;
-sys_call_table[__NR_lseek] = (unsigned long *)new_sys_lseek;
-sys_call_table[__NR_mount] = (unsigned long *)new_sys_mount;
-sys_call_table[__NR_fstat] = (unsigned long *)new_sys_fstat;
-sys_call_table[__NR_access] = (unsigned long *)new_sys_access;
-sys_call_table[__NR_sync] = (unsigned long *)new_sys_sync;
-sys_call_table[__NR_mkdir] = (unsigned long *)new_sys_mkdir;
-sys_call_table[__NR_rmdir] = (unsigned long *)new_sys_rmdir;
-sys_call_table[__NR_chroot] = (unsigned long *)new_sys_chroot;
-sys_call_table[__NR_symlink] = (unsigned long *)new_sys_symlink;
-sys_call_table[__NR_lstat] = (unsigned long *)new_sys_lstat;
-sys_call_table[__NR_readlink] = (unsigned long *)new_sys_readlink;
-sys_call_table[__NR_fchmod] = (unsigned long *)new_sys_fchmod;
-sys_call_table[__NR_fstatfs] = (unsigned long *)new_sys_fstatfs;
-sys_call_table[__NR_statfs] = (unsigned long *)new_sys_statfs;
-sys_call_table[__NR_fsync] = (unsigned long *)new_sys_fsync;
-sys_call_table[__NR_llseek] = (unsigned long *)new_sys_llseek;
-sys_call_table[__NR_readv] = (unsigned long *)new_sys_readv;
-sys_call_table[__NR_writev] = (unsigned long *)new_sys_writev;
-sys_call_table[__NR_pread] = (unsigned long *)new_sys_pread;
-sys_call_table[__NR_pwrite] = (unsigned long *)new_sys_pwrite;
-sys_call_table[__NR_chown] = (unsigned long *)new_sys_chown;
-sys_call_table[__NR_getpid] = (unsigned long *)new_sys_getpid;
-sys_call_table[__NR_manage_sids] = (unsigned long *)new_sys_manage_sids;
+	sys_call_table[__NR_mknod] = (unsigned long *)new_sys_mknod;
+	sys_call_table[__NR_lchown] = (unsigned long *)new_sys_lchown;
+	sys_call_table[__NR_lseek] = (unsigned long *)new_sys_lseek;
+	sys_call_table[__NR_mount] = (unsigned long *)new_sys_mount;
+	sys_call_table[__NR_fstat] = (unsigned long *)new_sys_fstat;
+	sys_call_table[__NR_access] = (unsigned long *)new_sys_access;
+	sys_call_table[__NR_sync] = (unsigned long *)new_sys_sync;
+	sys_call_table[__NR_mkdir] = (unsigned long *)new_sys_mkdir;
+	sys_call_table[__NR_rmdir] = (unsigned long *)new_sys_rmdir;
+	sys_call_table[__NR_chroot] = (unsigned long *)new_sys_chroot;
+	sys_call_table[__NR_symlink] = (unsigned long *)new_sys_symlink;
+	sys_call_table[__NR_lstat] = (unsigned long *)new_sys_lstat;
+	sys_call_table[__NR_readlink] = (unsigned long *)new_sys_readlink;
+	sys_call_table[__NR_fchmod] = (unsigned long *)new_sys_fchmod;
+	sys_call_table[__NR_fstatfs] = (unsigned long *)new_sys_fstatfs;
+	sys_call_table[__NR_statfs] = (unsigned long *)new_sys_statfs;
+	sys_call_table[__NR_fsync] = (unsigned long *)new_sys_fsync;
+	//sys_call_table[__NR_llseek] = (unsigned long *)new_sys_llseek;
+	sys_call_table[__NR_readv] = (unsigned long *)new_sys_readv;
+	sys_call_table[__NR_writev] = (unsigned long *)new_sys_writev;
+	//sys_call_table[__NR_pread] = (unsigned long *)new_sys_pread;
+	//sys_call_table[__NR_pwrite] = (unsigned long *)new_sys_pwrite;
+	sys_call_table[__NR_chown] = (unsigned long *)new_sys_chown;
+	//sys_call_table[__NR_getpid] = (unsigned long *)new_sys_getpid;
+	sys_call_table[__NR_manage_sids] = (unsigned long *)new_sys_manage_sids;
 	write_cr0(original_cr0);
 
 	 //this is to initiate the linked list of SIDs
@@ -803,13 +791,13 @@ static void __exit interceptor_end(void)
 	sys_call_table[__NR_fstatfs] =  (unsigned long * ) ref_sys_fstatfs;
 	sys_call_table[__NR_statfs] =  (unsigned long * ) ref_sys_statfs;
 	sys_call_table[__NR_fsync] =  (unsigned long * ) ref_sys_fsync;
-	sys_call_table[__NR_llseek] =  (unsigned long * ) ref_sys_llseek;
+	//sys_call_table[__NR_llseek] =  (unsigned long * ) ref_sys_llseek;
 	sys_call_table[__NR_readv] =  (unsigned long * ) ref_sys_readv;
 	sys_call_table[__NR_writev] =  (unsigned long * ) ref_sys_writev;
-	sys_call_table[__NR_pread] =  (unsigned long * ) ref_sys_pread;
-	sys_call_table[__NR_pwrite] =  (unsigned long * ) ref_sys_pwrite;
+	//sys_call_table[__NR_pread] =  (unsigned long * ) ref_sys_pread;
+	//sys_call_table[__NR_pwrite] =  (unsigned long * ) ref_sys_pwrite;
 	sys_call_table[__NR_chown] =  (unsigned long * ) ref_sys_chown;
-	sys_call_table[__NR_getpid] =  (unsigned long * ) ref_sys_getpid;
+	//sys_call_table[__NR_getpid] =  (unsigned long * ) ref_sys_getpid;
 	sys_call_table[__NR_manage_sids] =  (unsigned long * ) ref_sys_manage_sids;
 	write_cr0(original_cr0);
 						
@@ -818,8 +806,3 @@ static void __exit interceptor_end(void)
 
 module_init(interceptor_start);
 module_exit(interceptor_end);
-
-MODULE_LICENSE("GPL");
-
-
-

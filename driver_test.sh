@@ -4,9 +4,9 @@
 
 #Below three commands are just to make the character devices that are being used by the two drivers
 
-#cd /dev/
-#mknod my_char_dev c 60 0
-#	mknod my_char_dev_return c 61 0
+cd /dev/
+mknod my_char_dev c 60 0
+	mknod my_char_dev_return c 61 0
 
 cd /home/nitin/thesis/modules
 
