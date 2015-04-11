@@ -35,7 +35,7 @@ List of defines used as constants
 /**************************************************************************************************
 Global declarations for this module.
 **************************************************************************************************/
-static struct sid_obj **  sid_hash_k = NULL;
+struct sid_obj **  sid_hash_k = NULL;
 static int is_all_hash_written = 0;
 static int hash_write_index = 0;
 static int hash_list_write_index = 0;
@@ -46,13 +46,22 @@ This section of the code basically builds a hashing API that will be used to cat
 list of inodes to be stored in the kernel memory. The memory here refers to the kernel memory
 
 ***************************************************************************************************/
+struct sid_data{
+  struct sid_data * next;
+  char * sid;
+};
+
 struct sid_obj{
   unsigned long inode_number;
   
   int n_sids;
   struct sid_obj * next; 
-  char ** sids;
+  struct sid_data * s_list;
 };
+
+
+
+
 
 EXPORT_SYMBOL(sid_hash_k);
 
@@ -66,7 +75,7 @@ static void replace_1_with_0(char * buff){
 }
 /**************************************************************************************************
 add_node
-This function adds a node to the has data structure and then returns without any value.
+This function adds a node to the hash data structure and then returns without any value.
 
 **************************************************************************************************/
 void add_node_k(struct sid_obj * ptr){
@@ -81,9 +90,9 @@ void add_node_k(struct sid_obj * ptr){
 	     }
     while(entry_ptr->next) {
 	     if(entry_ptr->inode_number == ptr->inode_number){
-		printk("Duplicate insertion attempted for inode %lu   ignoring and returning\n" ,ptr->inode_number );
-		return;
-	     }
+    		printk("Duplicate insertion attempted for inode %lu   ignoring and returning\n" ,ptr->inode_number );
+    		return;
+	   }
 		entry_ptr = entry_ptr->next;
     	
 	}
@@ -103,6 +112,82 @@ struct sid_obj * get_node_k(unsigned long inode_number){
     else return NULL;
   }
 }
+//#################################################################################################
+// add_sid_with_inode_k
+// @This function basically tries to associate an sid with an inode number. The inode number 
+// association needs to be done because a system call must have been made to access this inode
+// number with this sid. So that needs to be tracked. 
+//#################################################################################################
+void add_sid_with_inode_k(unsigned long inode_num , char * sid){
+  int hash_value = inode_num % HASH_SIZE ;
+// if the inode number called for is not even in the hash  
+  if(!sid_hash_k[hash_value]){
+    struct sid_obj * ptr = (struct sid_obj *) malloc(sizeof(struct sid_obj) , GFP_KERNEL);
+    ptr->n_sids = 1;
+    ptr->next = NULL;
+    ptr->sids = (char **)malloc(sizeof(char *) * 1 , GFP_KERNEL);
+    ptr->sids[0] = (char *) malloc(strlen(sid)  + 1 , GFP_KERNEL);
+    strcpy(ptr->sids[0] , sid);
+    sid_hash_k[hash_value] = ptr;
+  }else{
+// inode number being called for is in the hash    
+    struct sid_obj * ptr = sid_hash_k[hash_value];
+    struct sid_obj * prev;
+
+    int f = 0;
+    while(ptr && !f){
+
+      if(inode_num == ptr->inode_num){
+        f = 1;
+        int flag = 0;
+        for(int n = 0 ; n < ptr->n_sids ; n++){
+          if(strcmp(ptr->sids[n] , sid) == 0)
+          {
+            flag = 1;
+            break;
+          }
+        } 
+// If sid not already present in the inode object        
+        if(!flag){
+          char ** t_sids = ptr->sids;
+          char ** n_sids = (char ** ) kmalloc(ptr->n_sids + 1 ,  GFP_KERNEL)
+          for(int n = 0 ; n < ptr->n_sids ; n++){
+            n_sids[n] = t_sids[n];
+          }//end copy for loop 
+          char * new_sid = (char * ) kmalloc(strlen(sid) + 1 , GFP_KERNEL);
+          strcpy(new_sid , sid);
+
+          n_sids[ptr->n_sids] = new_sid;
+          kfree(t_sids);
+          ptr->sids = n_sids;
+
+        }//end flag if
+        break;
+      }//end inode number found  if
+      prev = ptr;
+      ptr = ptr->next;
+
+    }//while 
+// this case is when the hash collision occurs but there is not inode entry for the particular number we have got.    
+    if(!f){
+      struct sid_obj * p = (struct sid_obj *) malloc(sizeof(struct sid_obj) , GFP_KERNEL);
+      p->n_sids = 1;
+      p->next = NULL;
+      p->sids = (char **)malloc(sizeof(char *) * 1 , GFP_KERNEL);
+      p->sids[0] = (char *) malloc(strlen(sid)  + 1 , GFP_KERNEL);
+      strcpy(p->sids[0] , sid);
+      prev->next = p;
+    }// end !f  if condition
+
+  }//end big if else which checks for hash rentry
+
+}// end add_sid_with_inode_k
+void delete_sid_with_inode_k(unsigned long inode_num , char * sid){
+
+
+}
+EXPORT_SYMBOL(add_sid_with_inode_k);
+EXPORT_SYMBOL(delete_sid_with_inode_k);
 
 EXPORT_SYMBOL(get_node_k);
 
@@ -112,19 +197,12 @@ This function will read one line from the char device, create a node and then ad
 hash so that now it's ready for access when checked by hooked system calls
 ***************************************************************************************************/
 static int read_one_line(char * buff){
-  //int strl;
+ 
   int i;
-  //unsigned long inode_number;
-  //int r_value;
-  //int num_sids;
   struct sid_obj * obj_ptr;
   char value_buff[50];
-  //strl = strlen(buff);
-  printk("thesis:read one line called \n");
   replace_1_with_0(buff);
   obj_ptr = (struct sid_obj*)vmalloc(sizeof(struct sid_obj));
-  
-  printk("thesis: memory allocated for hash structure\n");
   // read the inode number from the buffer
   sscanf(buff , "%s" , value_buff);
   buff += strlen(value_buff) + 1;
@@ -134,24 +212,36 @@ static int read_one_line(char * buff){
   sscanf(value_buff , "%lu" , &obj_ptr->inode_number);
   obj_ptr->sids = (char **) vmalloc(sizeof(char *) * obj_ptr->n_sids);
   obj_ptr->next = NULL;	
-  printk("value read for sids and inode\n");
+  
   i = 0;
-    while(i < obj_ptr->n_sids){
+// initialize sid list when n_sids was atleast equal to 1
+  struct sid_data * curr;
+  if(obj_ptr->n_sids  > 0);
+  curr = obj_ptr->s_list;
+  while(i < obj_ptr->n_sids){
+    struct sid_data * temp = (struct sid_data * )kmalloc( (struct sid_data * ) , GFP_KERNEL);
     char * sid_value;
     sscanf(buff , "%s" , value_buff);
     buff += strlen(value_buff) + 1;
     sid_value = vmalloc(strlen(value_buff) + 1);
     strcpy(sid_value , value_buff);
-    obj_ptr->sids[i++] = sid_value;
-    if(i >= 6) break;
+    temp->sid = sid_value;
+    temp->next = NULL;
+    if(curr){
+      curr->next = temp;
+    }else{
+      obj_ptr->s_list = temp;
+    }
+    curr = temp;
+    i++;
   }
-  printk("thesis: one line read  inode = %lu  number of sids = %d   first sid = %s\n" , obj_ptr->inode_number , obj_ptr->n_sids , obj_ptr->sids[0]);
+ 
 // Add the read sid node to the hash in the kernel  
-add_node_k(obj_ptr);
-printk("thesis: add node call finished\n");
-
+  add_node_k(obj_ptr);
   return 0;
 }
+
+
 static char * prepare_one_line(struct sid_obj * ptr){
   char * buf , * ret ;
   int r , n; 
@@ -162,10 +252,12 @@ static char * prepare_one_line(struct sid_obj * ptr){
   buf += r;
   *buf++ = '$';
   n = ptr->n_sids;
-  while(n > 0){
-    r = sprintf(buf , "%s" , ptr->sids[--n]);
+  struct sid_data * curr = ptr->s_list;
+  while(curr){
+    r = sprintf(buf , "%s" , curr->sid;);
     buf += r;
     *buf++ = '$';
+    curr = curr -> next;
   }
    --buf;	
   *buf++ = '\n';

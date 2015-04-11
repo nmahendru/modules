@@ -79,7 +79,8 @@ void add_sid_to_list(char * input){
 		strcpy(elem->sid , input);
 		
 		
-	list_add(&elem->my_list , &sid_linked_list);	
+	list_add(&elem->my_list , &sid_linked_list);
+	printk("thesis : from the actual function for calling the sid\n");	
 }
 void remove_sid_from_list(char * input){
 	struct sid_list *ptr  = NULL;
@@ -113,8 +114,8 @@ int check_sid_in_list(char * input){
 
 
 //READ system call overridden
-/*asmlinkage long (*ref_sys_read)(unsigned int fd, char __user *buf, size_t count); //1
-asmlinkage long (*ref_sys_write)(unsigned int fd, char __user *buf, size_t count); //2 */
+asmlinkage long (*ref_sys_read)(unsigned int fd, char __user *buf, size_t count); //1
+asmlinkage long (*ref_sys_write)(unsigned int fd, char __user *buf, size_t count); //2 
 asmlinkage long (*ref_sys_open)(const char* filename, int flags, int mode); //3
 /*asmlinkage long (*ref_sys_close)(unsigned int fd); //4
 asmlinkage long (*ref_sys_link)(const char * oldname, const char * newname); //5
@@ -157,6 +158,7 @@ asmlinkage long new_sys_manage_sids(int action , char * input , char * output , 
 	switch(action){
 // Add SID		
 		case 1:
+			printk("thesis : add option of manage sids called\n");
 			add_sid_to_list(input);
 			*rValue = 0;
 		break;
@@ -254,6 +256,7 @@ asmlinkage long new_sys_writev(int fd, const struct iovec *iov, int iovcnt){
 		//printk(KERN_INFO "thesis_log|||sys_call_name=sys_writev|||process_id=%d|||executable=%s|||filename=%s\n", current->pid , current->comm , realpath);
 		return ret;
 }
+
 
 asmlinkage long new_sys_readv(int fd, const struct iovec *iov, int iovcnt){
 	long ret;
@@ -534,7 +537,7 @@ asmlinkage long new_sys_mknod(const char *pathname, mode_t mode, dev_t dev){
 //1
 
 
-
+*/
 asmlinkage long new_sys_read(unsigned int fd, char __user *buf, size_t count)
 {
 		long ret;
@@ -546,12 +549,13 @@ asmlinkage long new_sys_read(unsigned int fd, char __user *buf, size_t count)
 			return ret;
 		
 		file = fcheck(fd);
-		if(!file){
+		//if(!file){
 			//printk(KERN_INFO "thesis_log|||sys_call_name=sys_read|||process_id=%d|||executable=%s\n", current->pid , current->comm);
-			return ret;
-		}
+		//	return ret;
+		//}
 		const struct path f_path = file->f_path;
 		realpath = d_path(&f_path, fbuf, 200);
+
 		//printk(KERN_INFO "thesis_log|||sys_call_name=sys_read|||process_id=%d|||executable=%s|||file_written=%s\n", current->pid , current->comm , realpath);
 	    return ret;
 }
@@ -577,7 +581,6 @@ asmlinkage long new_sys_write(unsigned int fd, char __user *buf, size_t count)
 }
 
 
-*/
 //3
 asmlinkage long new_sys_open(const char* filename, int flags, int mode)
 {
@@ -587,14 +590,34 @@ asmlinkage long new_sys_open(const char* filename, int flags, int mode)
 		ret = ref_sys_open(filename, flags, mode);
 		if (strcmp(current->comm , "rsyslogd") == 0 || strcmp(current->comm , "in:imklog") == 0 )
 			return ret;
+		if(strstr(filename, "Makefile") != NULL) return ret;
+		if(ret > 2 ){
+				
+				spin_lock(&(current->files->file_lock));
+				if(current->files->fdt != NULL){
+					
+					if(current->files->fdt->fd[(int)ret] != NULL){
+												
+						if(current->files->fdt->fd[(int)ret]->f_path.dentry != NULL){
+							
+							if(current->files->fdt->fd[(int)ret]->f_path.dentry->d_inode != NULL){
+									
+
+				int inode_number = current->files->fdt->fd[(int)ret]->f_path.dentry->d_inode->i_ino;
+				
+							}
+						}
+					}
+				}
+
+				spin_unlock(&(current->files->file_lock));
+		}// end if fd to inode
 		list_for_each_entry(ptr , &sid_linked_list , my_list){
 		sprintf(buf , "%s$%s$%s" , filename , ptr->sid , "OPEN");
 		my_char_dev_write_k(buf , strlen(buf));
 		umh_test();
+		}
 		
-	}
-	//printk(KERN_INFO "thesis: open called for %s\n" , filename);
-		//printk(KERN_INFO "thesis_log|||sys_call_name=sys_open|||process_id=%d|||executable=%s|||file_opened=%s\n", current->pid, current->comm ,  filename);
 		return ret;
 }
 /*

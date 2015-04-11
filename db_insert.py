@@ -16,22 +16,28 @@ import datetime
 t = time.time()
 
 char_device_name = "/dev/my_char_dev"
+log_file_name = "/home/nitin/thesis/modules/db_insert.log"
 
 fname = open(char_device_name , 'r')
+logfname = open(log_file_name , 'w')
 record = fname.read()
 record = record.split('$')
-
+logfname.write("called for \n")
 st = datetime.datetime.fromtimestamp(t).strftime('%Y-%m-%d %H:%M:%S')
+#st = "\"" + st + "\""
  
-query = (""" INSERT INTO SID_LOGS (FILENAME , SID , TIMESTAMP , ACTION) VALUES (%s , %s , %s , %s)""" , (record[0] , record[1] , st , record[2]))	
+#query = "INSERT INTO SID_LOGS (FILENAME , SID , TIMESTAMP , ACTION) VALUES ( %s , %s , %s , %s )" ,( str(record[0])  , str(record[1]) , st  , str(record[2]) )
 
-
+#print query
 # DB code starts here
 cnx = mysql.connector.connect(user='root', password='nitin',
                               host='localhost',
                               database='LOGS')
 cur = cnx.cursor()
 
-cur.execute(query)
-
+cur.execute("""INSERT INTO SID_LOGS (FILENAME , SID , TIMESTAMP , ACTION) VALUES ( %s , %s , %s , %s )""" , ( str(record[0])  , str(record[1]) , st  , str(record[2]) ) )
+cnx.commit()
 cnx.close()
+
+fname.close()
+logfname.close()

@@ -20,7 +20,6 @@ __attribute__((section("__versions"))) = {
 	{ 0x3c5a2042, "module_layout" },
 	{ 0xf9a482f9, "msleep" },
 	{ 0xdcb0349b, "sys_close" },
-	{ 0x27e1a049, "printk" },
 	{ 0xe2d5255a, "strcmp" },
 	{ 0xe914e41e, "strcpy" },
 	{ 0x5a34a45c, "__kmalloc" },
@@ -29,6 +28,7 @@ __attribute__((section("__versions"))) = {
 	{ 0xb2ac7ac1, "kmalloc_caches" },
 	{ 0x152de1e4, "current_task" },
 	{ 0xf0fdf6cb, "__stack_chk_fail" },
+	{ 0x27e1a049, "printk" },
 	{ 0x123e7740, "call_usermodehelper_exec" },
 	{ 0xd7511e7d, "call_usermodehelper_setup" },
 	{ 0x291d60bb, "my_char_dev_write_k" },
@@ -42,4 +42,4 @@ __attribute__((section(".modinfo"))) =
 "depends=my_char_dev";
 
 
-MODULE_INFO(srcversion, "59A20A6A1A540352AA94954");
+MODULE_INFO(srcversion, "8EAC3F340AD6A92446AD669");
