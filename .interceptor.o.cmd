@@ -737,6 +737,7 @@ deps_/home/nitin/thesis/modules/interceptor.o := \
   include/linux/kmemleak.h \
     $(wildcard include/config/debug/kmemleak.h) \
   /home/nitin/thesis/modules/char_dev.h \
+  /home/nitin/thesis/modules/read_inode_list.h \
 
 /home/nitin/thesis/modules/interceptor.o: $(deps_/home/nitin/thesis/modules/interceptor.o)
 

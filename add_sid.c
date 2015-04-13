@@ -9,7 +9,7 @@ long hello_syscall(void)
 {
 	char * o;
 	int i = 0;
-    return syscall(__NR_manage_sids , 1 , "sid2" , o , &i );
+    return syscall(__NR_manage_sids , 1 , "SID2" , o , &i );
 }
  
 int main(int argc, char *argv[])

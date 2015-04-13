@@ -26,20 +26,23 @@ __attribute__((section("__versions"))) = {
 	{ 0x25ec1b28, "strlen" },
 	{ 0x7a22f2bc, "kmem_cache_alloc_trace" },
 	{ 0xb2ac7ac1, "kmalloc_caches" },
-	{ 0x152de1e4, "current_task" },
 	{ 0xf0fdf6cb, "__stack_chk_fail" },
-	{ 0x27e1a049, "printk" },
 	{ 0x123e7740, "call_usermodehelper_exec" },
 	{ 0xd7511e7d, "call_usermodehelper_setup" },
 	{ 0x291d60bb, "my_char_dev_write_k" },
 	{ 0x91715312, "sprintf" },
+	{ 0x27e1a049, "printk" },
+	{ 0x503ef132, "add_sid_with_inode_k" },
+	{ 0xd52bf1ce, "_raw_spin_lock" },
+	{ 0x1e6d26a8, "strstr" },
+	{ 0x152de1e4, "current_task" },
 	{ 0xb4390f9a, "mcount" },
 };
 
 static const char __module_depends[]
 __used
 __attribute__((section(".modinfo"))) =
-"depends=my_char_dev";
+"depends=my_char_dev,read_inode_list";
 
 
-MODULE_INFO(srcversion, "8EAC3F340AD6A92446AD669");
+MODULE_INFO(srcversion, "B9D0A7011BCA0BD73C2C065");

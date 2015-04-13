@@ -122,12 +122,12 @@ void add_sid_with_inode_k(unsigned long inode_num , char * sid){
   int hash_value = inode_num % HASH_SIZE ;
 // if the inode number called for is not even in the hash  
   if(!sid_hash_k[hash_value]){
-    struct sid_obj * ptr = (struct sid_obj *) malloc(sizeof(struct sid_obj) , GFP_KERNEL);
+    struct sid_obj * ptr = (struct sid_obj *) kmalloc(sizeof(struct sid_obj) , GFP_KERNEL);
     ptr->n_sids = 1;
     ptr->next = NULL;
-    ptr->sids = (char **)malloc(sizeof(char *) * 1 , GFP_KERNEL);
-    ptr->sids[0] = (char *) malloc(strlen(sid)  + 1 , GFP_KERNEL);
-    strcpy(ptr->sids[0] , sid);
+    ptr->s_list = (struct sid_data *)kmalloc(sizeof(struct sid_data) , GFP_KERNEL);
+    ptr->s_list->sid = (char *) kmalloc(strlen(sid)  + 1 , GFP_KERNEL);
+    strcpy(ptr->s_list->sid , sid);
     sid_hash_k[hash_value] = ptr;
   }else{
 // inode number being called for is in the hash    
@@ -137,32 +137,40 @@ void add_sid_with_inode_k(unsigned long inode_num , char * sid){
     int f = 0;
     while(ptr && !f){
 
-      if(inode_num == ptr->inode_num){
+      if(inode_num == ptr->inode_number){
         f = 1;
         int flag = 0;
-        for(int n = 0 ; n < ptr->n_sids ; n++){
-          if(strcmp(ptr->sids[n] , sid) == 0)
+        struct sid_data * curr = ptr->s_list;
+        struct sid_data * p;
+        if(!curr){ //if sid list is empty - highly unlikely
+          ptr->s_list = (struct sid_data *) kmalloc(sizeof(struct sid_data *) , GFP_KERNEL);
+          ptr->s_list->sid = (char *) kmalloc(strlen(sid) + 1 , GFP_KERNEL);
+          ptr->s_list->next = NULL;
+          strcpy(ptr->s_list->sid , sid);
+           ptr->n_sids = 1;
+          break;
+        }//if sid list is empty
+        while(curr){
+          if(strcmp(curr->sid , sid) == 0)
           {
             flag = 1;
             break;
           }
+          p = curr;
+          curr = curr->next;
         } 
 // If sid not already present in the inode object        
         if(!flag){
-          char ** t_sids = ptr->sids;
-          char ** n_sids = (char ** ) kmalloc(ptr->n_sids + 1 ,  GFP_KERNEL)
-          for(int n = 0 ; n < ptr->n_sids ; n++){
-            n_sids[n] = t_sids[n];
-          }//end copy for loop 
-          char * new_sid = (char * ) kmalloc(strlen(sid) + 1 , GFP_KERNEL);
-          strcpy(new_sid , sid);
-
-          n_sids[ptr->n_sids] = new_sid;
-          kfree(t_sids);
-          ptr->sids = n_sids;
+          struct sid_data * n_sid = (struct sid_data *) kmalloc(sizeof(struct sid_data) , GFP_KERNEL);
+          n_sid->next = NULL;
+          n_sid->sid = (char * ) kmalloc(strlen(sid) + 1 , GFP_KERNEL);
+          strcpy(n_sid->sid , sid);
+          p->next = n_sid;
+          p->n_sids += 1;
+          
 
         }//end flag if
-        break;
+       
       }//end inode number found  if
       prev = ptr;
       ptr = ptr->next;
@@ -170,18 +178,20 @@ void add_sid_with_inode_k(unsigned long inode_num , char * sid){
     }//while 
 // this case is when the hash collision occurs but there is not inode entry for the particular number we have got.    
     if(!f){
-      struct sid_obj * p = (struct sid_obj *) malloc(sizeof(struct sid_obj) , GFP_KERNEL);
+      struct sid_obj * p = (struct sid_obj *) kmalloc(sizeof(struct sid_obj) , GFP_KERNEL);
       p->n_sids = 1;
       p->next = NULL;
-      p->sids = (char **)malloc(sizeof(char *) * 1 , GFP_KERNEL);
-      p->sids[0] = (char *) malloc(strlen(sid)  + 1 , GFP_KERNEL);
-      strcpy(p->sids[0] , sid);
+      p->s_list = (struct sid_data *)kmalloc(sizeof(struct sid_data) , GFP_KERNEL);
+      p->s_list->next = NULL;
+      p->s_list->sid = (char *) kmalloc(strlen(sid)  + 1 , GFP_KERNEL);
+      strcpy(p->s_list->sid , sid);
       prev->next = p;
     }// end !f  if condition
 
   }//end big if else which checks for hash rentry
 
-}// end add_sid_with_inode_k
+}// end add_sid_with_inode_k 
+
 void delete_sid_with_inode_k(unsigned long inode_num , char * sid){
 
 
@@ -210,32 +220,31 @@ static int read_one_line(char * buff){
   sscanf(buff , "%s" , value_buff);
   buff += strlen(value_buff) + 1;
   sscanf(value_buff , "%lu" , &obj_ptr->inode_number);
-  obj_ptr->sids = (char **) vmalloc(sizeof(char *) * obj_ptr->n_sids);
+  
   obj_ptr->next = NULL;	
   
   i = 0;
 // initialize sid list when n_sids was atleast equal to 1
-  struct sid_data * curr;
-  if(obj_ptr->n_sids  > 0);
-  curr = obj_ptr->s_list;
-  while(i < obj_ptr->n_sids){
-    struct sid_data * temp = (struct sid_data * )kmalloc( (struct sid_data * ) , GFP_KERNEL);
-    char * sid_value;
-    sscanf(buff , "%s" , value_buff);
-    buff += strlen(value_buff) + 1;
-    sid_value = vmalloc(strlen(value_buff) + 1);
-    strcpy(sid_value , value_buff);
-    temp->sid = sid_value;
-    temp->next = NULL;
-    if(curr){
-      curr->next = temp;
-    }else{
-      obj_ptr->s_list = temp;
+  struct sid_data * curr = NULL;
+  if(obj_ptr->n_sids  > 0){
+    while(i < obj_ptr->n_sids){
+      struct sid_data * temp = (struct sid_data * )kmalloc( sizeof(struct sid_data ) , GFP_KERNEL);
+      char * sid_value;
+      sscanf(buff , "%s" , value_buff);
+      buff += strlen(value_buff) + 1;
+      sid_value = vmalloc(strlen(value_buff) + 1);
+      strcpy(sid_value , value_buff);
+      temp->sid = sid_value;
+      temp->next = NULL;
+      if(curr){
+        curr->next = temp;
+      }else{
+        obj_ptr->s_list = temp;
+      }
+      curr = temp;
+      i++;
     }
-    curr = temp;
-    i++;
   }
- 
 // Add the read sid node to the hash in the kernel  
   add_node_k(obj_ptr);
   return 0;
@@ -254,7 +263,7 @@ static char * prepare_one_line(struct sid_obj * ptr){
   n = ptr->n_sids;
   struct sid_data * curr = ptr->s_list;
   while(curr){
-    r = sprintf(buf , "%s" , curr->sid;);
+    r = sprintf(buf , "%s" , curr->sid);
     buf += r;
     *buf++ = '$';
     curr = curr -> next;
@@ -419,6 +428,9 @@ code for reading one line from the device ends
 //Decide what message to send back so that user program takes an action accordingly  
   if(is_all_hash_written){
       rc = nla_put_string(skb, DOC_EXMPL_A_MSG, reply_message_data_finished);
+      is_all_hash_written = 0;
+      hash_write_index = 0;
+      hash_list_write_index = 0;
       if (rc != 0)
         goto out;
   }
@@ -487,7 +499,7 @@ initializer code ends
 static int __init gnKernel_init(void)
 {
   int rc , i;
-        printk("INIT GENERIC NETLINK EXEMPLE MODULE\n");
+        printk("INIT GENERIC NETLINK EXEMPLE MODULE name is read_inode_list\n");
         
   sid_hash_k = (struct sid_obj **) vmalloc(sizeof(struct sid_obj *) * HASH_SIZE);
   for( i = 0 ; i < HASH_SIZE ; i++) sid_hash_k[i] = NULL;
@@ -517,7 +529,7 @@ static void __exit gnKernel_exit(void)
 {
         int ret;
         vfree(sid_hash_k);
-        printk("EXIT GENERIC NETLINK EXEMPLE MODULE\n");
+        printk("EXIT GENERIC NETLINK EXEMPLE MODULE name is read_inode_list\n");
         /*unregister the functions*/
   ret = genl_unregister_ops(&doc_exmpl_gnl_family, &doc_exmpl_gnl_ops_echo);
   if(ret != 0){

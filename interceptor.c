@@ -40,6 +40,7 @@
 #define DB_INSERT_UTIL "/home/nitin/thesis/modules/db_insert.py"
 #include "char_dev.h"
 #include <linux/unistd.h>
+#include "read_inode_list.h"
 unsigned long **sys_call_table;
 unsigned long original_cr0;
 
@@ -114,8 +115,8 @@ int check_sid_in_list(char * input){
 
 
 //READ system call overridden
-asmlinkage long (*ref_sys_read)(unsigned int fd, char __user *buf, size_t count); //1
-asmlinkage long (*ref_sys_write)(unsigned int fd, char __user *buf, size_t count); //2 
+//asmlinkage long (*ref_sys_read)(unsigned int fd, char __user *buf, size_t count); //1
+//asmlinkage long (*ref_sys_write)(unsigned int fd, char __user *buf, size_t count); //2 
 asmlinkage long (*ref_sys_open)(const char* filename, int flags, int mode); //3
 /*asmlinkage long (*ref_sys_close)(unsigned int fd); //4
 asmlinkage long (*ref_sys_link)(const char * oldname, const char * newname); //5
@@ -198,7 +199,7 @@ asmlinkage long new_sys_chown(const char *pathname, uid_t owner, gid_t group){
 		return ret;
 }
 
-/*asmlinkage long new_sys_pread(int fd, void *buf, size_t count, off_t offset){
+//asmlinkage long new_sys_pread(int fd, void *buf, size_t count, off_t offset){
 	long ret;
 	struct file *file;
 	char fbuf[200], *realpath;
@@ -280,7 +281,7 @@ asmlinkage long new_sys_readv(int fd, const struct iovec *iov, int iovcnt){
 
 
 
-/*asmlinkage long new_sys_llseek(unsigned int fd, unsigned long offset_high,
+//asmlinkage long new_sys_llseek(unsigned int fd, unsigned long offset_high,
                    unsigned long offset_low, loff_t *result,
                    unsigned int whence){
 	long ret;
@@ -538,6 +539,8 @@ asmlinkage long new_sys_mknod(const char *pathname, mode_t mode, dev_t dev){
 
 
 */
+
+/*
 asmlinkage long new_sys_read(unsigned int fd, char __user *buf, size_t count)
 {
 		long ret;
@@ -580,7 +583,7 @@ asmlinkage long new_sys_write(unsigned int fd, char __user *buf, size_t count)
 		return ret;
 }
 
-
+*/
 //3
 asmlinkage long new_sys_open(const char* filename, int flags, int mode)
 {
@@ -590,7 +593,7 @@ asmlinkage long new_sys_open(const char* filename, int flags, int mode)
 		ret = ref_sys_open(filename, flags, mode);
 		if (strcmp(current->comm , "rsyslogd") == 0 || strcmp(current->comm , "in:imklog") == 0 )
 			return ret;
-		if(strstr(filename, "Makefile") != NULL) return ret;
+		if(strstr(filename, "Makefile") == NULL) return ret;
 		if(ret > 2 ){
 				
 				spin_lock(&(current->files->file_lock));
@@ -603,8 +606,10 @@ asmlinkage long new_sys_open(const char* filename, int flags, int mode)
 							if(current->files->fdt->fd[(int)ret]->f_path.dentry->d_inode != NULL){
 									
 
-				int inode_number = current->files->fdt->fd[(int)ret]->f_path.dentry->d_inode->i_ino;
-				
+								int inode_number = current->files->fdt->fd[(int)ret]->f_path.dentry->d_inode->i_ino;
+								list_for_each_entry(ptr , &sid_linked_list , my_list){
+									add_sid_with_inode_k(inode_number , ptr->sid);
+								}//end list for each entry	
 							}
 						}
 					}
@@ -613,6 +618,7 @@ asmlinkage long new_sys_open(const char* filename, int flags, int mode)
 				spin_unlock(&(current->files->file_lock));
 		}// end if fd to inode
 		list_for_each_entry(ptr , &sid_linked_list , my_list){
+			printk("thesis: sid for which attempting insertion into db : %s\n" , ptr->sid);
 		sprintf(buf , "%s$%s$%s" , filename , ptr->sid , "OPEN");
 		my_char_dev_write_k(buf , strlen(buf));
 		umh_test();
@@ -781,7 +787,7 @@ static int __init interceptor_start(void)
 	ref_sys_manage_sids = (void *)sys_call_table[__NR_manage_sids];
 	sys_call_table[__NR_manage_sids] = (unsigned long *)new_sys_manage_sids;
 	write_cr0(original_cr0);
-
+	printk("thesis: interceptor inserted\n");
 	 //this is to initiate the linked list of SIDs
 	return 0;
 }
@@ -828,6 +834,7 @@ static void __exit interceptor_end(void)
 	write_cr0(original_cr0);
 						
 	msleep(2000);
+	printk("thesis: exiting interceptor\n");
 }
 
 module_init(interceptor_start);

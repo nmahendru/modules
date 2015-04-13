@@ -86,13 +86,13 @@ int device_init(){
         return ret;
     }
     memset(device_buffer, 0, BUFFER_SIZE);
-    printk(KERN_INFO "my_char_dev_return loaded.\n");
+    printk(KERN_INFO "thesis: my_char_dev_return loaded.\n");
     return 0;
 }
  
 void device_exit() {
     unregister_chrdev(device_major, DEVICE_NAME);
-    printk(KERN_INFO "my_char_dev_return unloaded.\n");
+    printk(KERN_INFO "thesis: my_char_dev_return unloaded.\n");
 }
  
 static int device_open(struct inode *nd, struct file *fp){

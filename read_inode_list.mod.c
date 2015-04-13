@@ -18,6 +18,8 @@ static const struct modversion_info ____versions[]
 __used
 __attribute__((section("__versions"))) = {
 	{ 0x3c5a2042, "module_layout" },
+	{ 0xb2ac7ac1, "kmalloc_caches" },
+	{ 0x5a34a45c, "__kmalloc" },
 	{ 0x70f20fc3, "genl_register_family" },
 	{ 0xd6ee688f, "vmalloc" },
 	{ 0x25ec1b28, "strlen" },
@@ -35,6 +37,7 @@ __attribute__((section("__versions"))) = {
 	{ 0xc92bf12f, "netlink_unicast" },
 	{ 0x626db2a6, "__alloc_skb" },
 	{ 0xf0fdf6cb, "__stack_chk_fail" },
+	{ 0x7a22f2bc, "kmem_cache_alloc_trace" },
 	{ 0x3291a5ee, "genl_register_ops" },
 	{ 0x212fafe6, "skb_put" },
 	{ 0x52dc4c15, "genl_unregister_ops" },
@@ -47,4 +50,4 @@ __attribute__((section(".modinfo"))) =
 "depends=my_char_dev";
 
 
-MODULE_INFO(srcversion, "5AAC040F999EAD103E3F4D4");
+MODULE_INFO(srcversion, "2A7CBC57D29A260B525E848");
