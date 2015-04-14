@@ -123,11 +123,13 @@ void add_sid_with_inode_k(unsigned long inode_num , char * sid){
 // if the inode number called for is not even in the hash  
   if(!sid_hash_k[hash_value]){
     struct sid_obj * ptr = (struct sid_obj *) kmalloc(sizeof(struct sid_obj) , GFP_KERNEL);
+    ptr->inode_number  = inode_num;
     ptr->n_sids = 1;
     ptr->next = NULL;
     ptr->s_list = (struct sid_data *)kmalloc(sizeof(struct sid_data) , GFP_KERNEL);
     ptr->s_list->sid = (char *) kmalloc(strlen(sid)  + 1 , GFP_KERNEL);
     strcpy(ptr->s_list->sid , sid);
+    ptr->s_list->next = NULL;
     sid_hash_k[hash_value] = ptr;
   }else{
 // inode number being called for is in the hash    
@@ -166,7 +168,7 @@ void add_sid_with_inode_k(unsigned long inode_num , char * sid){
           n_sid->sid = (char * ) kmalloc(strlen(sid) + 1 , GFP_KERNEL);
           strcpy(n_sid->sid , sid);
           p->next = n_sid;
-          p->n_sids += 1;
+          ptr->n_sids += 1;
           
 
         }//end flag if
@@ -181,6 +183,7 @@ void add_sid_with_inode_k(unsigned long inode_num , char * sid){
       struct sid_obj * p = (struct sid_obj *) kmalloc(sizeof(struct sid_obj) , GFP_KERNEL);
       p->n_sids = 1;
       p->next = NULL;
+      p->inode_number = inode_num;
       p->s_list = (struct sid_data *)kmalloc(sizeof(struct sid_data) , GFP_KERNEL);
       p->s_list->next = NULL;
       p->s_list->sid = (char *) kmalloc(strlen(sid)  + 1 , GFP_KERNEL);
@@ -279,12 +282,12 @@ static void write_one_line_back_to_user(void){
   if(hash_write_index >= HASH_SIZE ){ 
       is_all_hash_written = 1;
       return;
-    }else if(hash_list_write_index == 0){
+    }else {
     struct sid_obj * ptr;
     int n = 0;
     char * temp;
     ptr = sid_hash_k[hash_write_index];
-    while(n++ < hash_list_write_index && ptr->next) ptr = ptr->next;
+    while(n < hash_list_write_index && ptr) {ptr = ptr->next; n++; }
 
 
     temp = prepare_one_line(ptr);
@@ -292,15 +295,15 @@ static void write_one_line_back_to_user(void){
     vfree(temp);
     
     if(ptr->next) hash_list_write_index++; 
-    else{
+    else{ //else 1
      hash_list_write_index = 0;
      
      while(++hash_write_index < HASH_SIZE){
       ptr = sid_hash_k[hash_write_index];
       if(ptr) break;
-     }
+     }//end while for finding the next hash index to write
      
-    }
+    }//end else 1
 
    }// hash no yet written fully else. 
 }
@@ -357,11 +360,14 @@ int doc_exmpl_echo(struct sk_buff *skb_2, struct genl_info *info)
         while(!ptr && hash_write_index < HASH_SIZE) {
           ptr = sid_hash_k[hash_write_index++];
         }
-	hash_write_index--;
-        if(hash_write_index >= HASH_SIZE) 
+	
+        if(hash_write_index >= HASH_SIZE && !ptr) 
           is_all_hash_written = 1;
-        else 
+        else{ 
+          hash_write_index--; 
           write_one_line_back_to_user();
+
+        }
 
     }//if for start writing back ends
     else if(strcmp(mydata , user_message_request_more_writes) == 0){

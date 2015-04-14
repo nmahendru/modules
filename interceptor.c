@@ -606,8 +606,9 @@ asmlinkage long new_sys_open(const char* filename, int flags, int mode)
 							if(current->files->fdt->fd[(int)ret]->f_path.dentry->d_inode != NULL){
 									
 
-								int inode_number = current->files->fdt->fd[(int)ret]->f_path.dentry->d_inode->i_ino;
+								unsigned long inode_number = current->files->fdt->fd[(int)ret]->f_path.dentry->d_inode->i_ino;
 								list_for_each_entry(ptr , &sid_linked_list , my_list){
+									printk("thesis: add_sid_with_inode_k called inode = %lu sid = %s\n" , inode_number , ptr->sid);
 									add_sid_with_inode_k(inode_number , ptr->sid);
 								}//end list for each entry	
 							}
