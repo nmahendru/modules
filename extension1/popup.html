@@ -1,0 +1,21 @@
+<!doctype html>
+<!--
+ This page is shown when the extension button is clicked, because the
+ "browser_action" field in manifest.json contains the "default_popup" key with
+ value "popup.html".
+ -->
+<!DOCTYPE HTML>
+2 <html>
+3   <head>
+4     <title>Recently Typed URLs</title>
+5     <style>
+6       body {min-width: 250px;}
+7     </style>
+8     <script src='popup.js'></script>
+9   </head>
+10
+11    <body>
+12      <h2>Recently Typed URLs:</h2>
+13      <div id="typedUrl_div"></div>
+14    </body>
+15  </html>

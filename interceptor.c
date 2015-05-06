@@ -1,5 +1,5 @@
 //#################################################################################################
-//This module will be used to hookup to system calls and then track them and insert appropriate 
+//This module will be used to hookup to system calls and then track them and insert appropriate
 //records which are having information about those system calls being made.
 //#################################################################################################
 //#################################################################################################
@@ -11,8 +11,8 @@
 //    3. check sid
 // p2 : input buffer
 // p3 : output buffer
-// return value :  integer 
-// 
+// return value :  integer
+//
 //#################################################################################################
 //#################################################################################################
 // ACTIONS POSSIBLE: This basically lists down the actions possible in every system call:
@@ -60,7 +60,7 @@ static int umh_test(void){
   if (sub_info == NULL) return -ENOMEM;
 
   call_usermodehelper_exec( sub_info, UMH_WAIT_PROC );
-  
+
   return 0;
 }
 
@@ -73,15 +73,16 @@ struct sid_list{
 	char * sid;
 };
 //list of the current sids active in the system at this point
+struct sid_list *ptr  = NULL;
 
 void add_sid_to_list(char * input){
 	struct sid_list * elem = (struct sid_list * )kmalloc(sizeof(struct sid_list) , GFP_KERNEL);
 		elem->sid = (char *)kmalloc(strlen(input) , GFP_KERNEL);
 		strcpy(elem->sid , input);
-		
-		
+
+
 	list_add(&elem->my_list , &sid_linked_list);
-	printk("thesis : from the actual function for calling the sid\n");	
+	printk("thesis : from the actual function for calling the sid\n");
 }
 void remove_sid_from_list(char * input){
 	struct sid_list *ptr  = NULL;
@@ -91,7 +92,7 @@ void remove_sid_from_list(char * input){
 			flag = 1;
 			break;
 		}
-	
+
 		if(flag){
 			list_del(&ptr->my_list);
 			kfree(ptr -> sid);
@@ -111,12 +112,53 @@ int check_sid_in_list(char * input){
 	}
 	return 0;
 }
+//##############################################################################
+// add_sids_with_current_inode_fd
+// This function is used to add all the active sids with the inode. This will
+// be the central function for the virtual copy semantics
+//##############################################################################
+static void add_sids_with_current_inode_fd(int fdvalue){
+	ptr = NULL;
+	if(fdvalue > 2 ){ //checks if the fd value is not the standard descriptors( 0 ,1 ,2) as we don't want logs for that.
+
+				spin_lock(&(current->files->file_lock));
+				if(current->files->fdt != NULL){
+
+					if(current->files->fdt->fd[(int)fdvalue] != NULL){
+
+						if(current->files->fdt->fd[(int)fdvalue]->f_path.dentry != NULL){
+
+							if(current->files->fdt->fd[(int)fdvalue]->f_path.dentry->d_inode != NULL){
 
 
+								unsigned long inode_number = current->files->fdt->fd[(int)fdvalue]->f_path.dentry->d_inode->i_ino;
+								list_for_each_entry(ptr , &sid_linked_list , my_list){
+									//printk("thesis: add_sid_with_inode_k called inode = %lu sid = %s\n" , inode_number , ptr->sid);
+									add_sid_with_inode_k(inode_number , ptr->sid);
+								}//end list for each entry
+							}
+						}
+					}
+				}
+
+				spin_unlock(&(current->files->file_lock));
+		}// end if fd to inode
+
+}
+
+static void insert_access_log_in_db(const char * action , const char * file_name){
+		ptr = NULL;
+		char buf[400];
+		list_for_each_entry(ptr , &sid_linked_list , my_list){
+			sprintf(buf , "%s$%s$%s" , file_name , ptr->sid , action);
+			my_char_dev_write_k(buf , strlen(buf));
+			umh_test();
+		}
+}
 
 //READ system call overridden
 //asmlinkage long (*ref_sys_read)(unsigned int fd, char __user *buf, size_t count); //1
-//asmlinkage long (*ref_sys_write)(unsigned int fd, char __user *buf, size_t count); //2 
+//asmlinkage long (*ref_sys_write)(unsigned int fd, char __user *buf, size_t count); //2
 asmlinkage long (*ref_sys_open)(const char* filename, int flags, int mode); //3
 /*asmlinkage long (*ref_sys_close)(unsigned int fd); //4
 asmlinkage long (*ref_sys_link)(const char * oldname, const char * newname); //5
@@ -157,13 +199,13 @@ asmlinkage long (*ref_sys_manage_sids)(int action , char * input , char * output
 asmlinkage long new_sys_manage_sids(int action , char * input , char * output , int * rValue){
 	printk("thesis: manage sids called %s\n" , input);
 	switch(action){
-// Add SID		
+// Add SID
 		case 1:
 			printk("thesis : add option of manage sids called\n");
 			add_sid_to_list(input);
 			*rValue = 0;
 		break;
-// remove SID		
+// remove SID
 		case 2:
 			remove_sid_from_list(input);
 			*rValue = 0;
@@ -173,7 +215,7 @@ asmlinkage long new_sys_manage_sids(int action , char * input , char * output , 
 			*rValue = check_sid_in_list(input);
 		break;
 
-	} 
+	}
 	return 0;
 }
 
@@ -186,15 +228,15 @@ asmlinkage long new_sys_chown(const char *pathname, uid_t owner, gid_t group){
 	ret = ref_sys_chown(pathname, owner , group);
 	if (strcmp(current->comm , "rsyslogd") == 0 || strcmp(current->comm , "in:imklog") == 0 )
 			return ret;
-	
-	
+
+
 	list_for_each_entry(ptr , &sid_linked_list , my_list){
 		sprintf(buf , "%s$%s$%s" , pathname , ptr->sid , "MODIFY");
 		my_char_dev_write_k(buf , strlen(buf));
 		umh_test();
 	}
 
-	
+
 		////printk(KERN_INFO "thesis_log|||sys_call_name=sys_chown|||process_id=%d|||executable=%s|||filename=%s\n", current->pid , current->comm , pathname);
 		return ret;
 }
@@ -217,7 +259,7 @@ asmlinkage long new_sys_chown(const char *pathname, uid_t owner, gid_t group){
 
 		//printk(KERN_INFO "thesis_log|||sys_call_name=sys_pread|||process_id=%d|||executable=%s|||filename=%s\n", current->pid , current->comm , realpath);
 		return ret;
-} 
+}
 asmlinkage long new_sys_pwrite(int fd, const void *buf, size_t count, off_t offset){
 	long ret;
 	struct file *file;
@@ -499,10 +541,10 @@ asmlinkage long new_sys_lseek(int fd, off_t offset, int whence){
 	struct file *file;
 		char fbuf[200], *realpath;
 		ret = ref_sys_lseek(fd, offset, whence);
-		
+
 		if (strcmp(current->comm , "rsyslogd") == 0 || strcmp(current->comm , "in:imklog") == 0 )
 			return ret;
-		
+
 		file = fcheck(fd);
 		if(!file){
 			//printk(KERN_INFO "thesis_log|||sys_call_name=sys_lseek|||process_id=%d|||executable=%s\n", current->pid , current->comm);
@@ -547,10 +589,10 @@ asmlinkage long new_sys_read(unsigned int fd, char __user *buf, size_t count)
 		struct file *file;
 		char fbuf[200], *realpath;
 		ret = ref_sys_read(fd, buf, count);
-		
+
 		if (strcmp(current->comm , "rsyslogd") == 0 || strcmp(current->comm , "in:imklog") == 0 )
 			return ret;
-		
+
 		file = fcheck(fd);
 		//if(!file){
 			//printk(KERN_INFO "thesis_log|||sys_call_name=sys_read|||process_id=%d|||executable=%s\n", current->pid , current->comm);
@@ -588,43 +630,13 @@ asmlinkage long new_sys_write(unsigned int fd, char __user *buf, size_t count)
 asmlinkage long new_sys_open(const char* filename, int flags, int mode)
 {
 		long ret;
-		struct sid_list *ptr  = NULL;
-		char buf[400];
 		ret = ref_sys_open(filename, flags, mode);
 		if (strcmp(current->comm , "rsyslogd") == 0 || strcmp(current->comm , "in:imklog") == 0 )
 			return ret;
 		if(strstr(filename, "Makefile") == NULL) return ret;
-		if(ret > 2 ){
-				
-				spin_lock(&(current->files->file_lock));
-				if(current->files->fdt != NULL){
-					
-					if(current->files->fdt->fd[(int)ret] != NULL){
-												
-						if(current->files->fdt->fd[(int)ret]->f_path.dentry != NULL){
-							
-							if(current->files->fdt->fd[(int)ret]->f_path.dentry->d_inode != NULL){
-									
-
-								unsigned long inode_number = current->files->fdt->fd[(int)ret]->f_path.dentry->d_inode->i_ino;
-								list_for_each_entry(ptr , &sid_linked_list , my_list){
-									printk("thesis: add_sid_with_inode_k called inode = %lu sid = %s\n" , inode_number , ptr->sid);
-									add_sid_with_inode_k(inode_number , ptr->sid);
-								}//end list for each entry	
-							}
-						}
-					}
-				}
-
-				spin_unlock(&(current->files->file_lock));
-		}// end if fd to inode
-		list_for_each_entry(ptr , &sid_linked_list , my_list){
-			printk("thesis: sid for which attempting insertion into db : %s\n" , ptr->sid);
-		sprintf(buf , "%s$%s$%s" , filename , ptr->sid , "OPEN");
-		my_char_dev_write_k(buf , strlen(buf));
-		umh_test();
-		}
-		
+		//add all the active sids to the current inode list
+		add_sids_with_current_inode_fd((int) ret);
+		insert_access_log_in_db("OPEN" , filename);
 		return ret;
 }
 /*
@@ -643,7 +655,7 @@ asmlinkage long new_sys_close(unsigned int fd)
 			return ret;
 		}
 		const struct path f_path = file->f_path;
-		realpath = d_path(&f_path, fbuf, 200);	
+		realpath = d_path(&f_path, fbuf, 200);
 		//printk(KERN_INFO "thesis_log|||sys_call_name=sys_close|||process_id=%d|||executable=%s|||file_written=%s\n", current->pid, current->comm , realpath);
 		return ret;
 }
@@ -660,7 +672,7 @@ asmlinkage long new_sys_link(const char * oldname , const char * newname)
 			return ret;
 		//printk(KERN_INFO "thesis_log|||sys_call_name=sys_link|||process_id=%d|||executable=%s|||oldname=%s|||newname=%s\n", current->pid, current->comm , oldname , newname);
 		return ret;
-		
+
 }
 
 //6
@@ -671,7 +683,7 @@ asmlinkage long new_sys_unlink(const char * pathname)
 		if (strcmp(current->comm , "rsyslogd") == 0 || strcmp(current->comm , "in:imklog") == 0 )
 			return ret;
 		//printk(KERN_INFO "thesis_log|||sys_call_name=sys_unlink|||process_id=%d|||executable=%s|||file_unlinked=%s\n", current->pid, current->comm , pathname);
-		
+
 		return ret;
 }
 
@@ -683,7 +695,7 @@ asmlinkage long new_sys_chdir(const char * filename)
 		if (strcmp(current->comm , "rsyslogd") == 0 || strcmp(current->comm , "in:imklog") == 0 )
 			return ret;
 		//printk(KERN_INFO "thesis_log|||sys_call_name=sys_chdir|||process_id=%d|||executable=%s|||target_dir=%s\n", current->pid, current->comm , filename);
-		
+
 		return ret;
 }
 
@@ -698,27 +710,27 @@ static unsigned long **aquire_sys_call_table(void)
 	while (offset < ULLONG_MAX) {
 		sct = (unsigned long **)offset;
 
-		if (sct[__NR_close] == (unsigned long *) sys_close) 
+		if (sct[__NR_close] == (unsigned long *) sys_close)
 			return sct;
 
 		offset += sizeof(void *);
 	}
-					
+
 	return NULL;
 }
 
-static int __init interceptor_start(void) 
+static int __init interceptor_start(void)
 {
 	if(!(sys_call_table = aquire_sys_call_table()))
 		return -1;
-			
+
 	original_cr0 = read_cr0();
 
 	write_cr0(original_cr0 & ~0x00010000);
 
 	//ref_sys_getpid = (void *)sys_call_table[__NR_getpid];
 /*	ref_sys_readlink = (void *)sys_call_table[__NR_readlink];
-	
+
 	ref_sys_read = (void *)sys_call_table[__NR_read];
 	sys_call_table[__NR_read] = (unsigned long *)new_sys_read;
 	ref_sys_write = (void *)sys_call_table[__NR_write];
@@ -757,7 +769,7 @@ static int __init interceptor_start(void)
 	//ref_sys_pwrite = (void *)sys_call_table[__NR_pwrite];
 	ref_sys_chown = (void *)sys_call_table[__NR_chown];
 	//ref_sys_getpid = (void *)sys_call_table[__NR_getpid];
-	
+
 
 
 	sys_call_table[__NR_mknod] = (unsigned long *)new_sys_mknod;
@@ -793,20 +805,20 @@ static int __init interceptor_start(void)
 	return 0;
 }
 
-static void __exit interceptor_end(void) 
+static void __exit interceptor_end(void)
 {
 	if(!sys_call_table) {
 		return;
 	}
-				
+
 	write_cr0(original_cr0 & ~0x00010000);
 	/*sys_call_table[__NR_read] = (unsigned long *)ref_sys_read;
 	sys_call_table[__NR_write] = (unsigned long *)ref_sys_write;*/
 	sys_call_table[__NR_open] = (unsigned long *)ref_sys_open;
-	/*sys_call_table[__NR_close] = (unsigned long *)ref_sys_close; 
-	sys_call_table[__NR_link] = (unsigned long *)ref_sys_link; 
-	sys_call_table[__NR_unlink] = (unsigned long *)ref_sys_unlink; 
-	sys_call_table[__NR_chdir] = (unsigned long *)ref_sys_chdir; 
+	/*sys_call_table[__NR_close] = (unsigned long *)ref_sys_close;
+	sys_call_table[__NR_link] = (unsigned long *)ref_sys_link;
+	sys_call_table[__NR_unlink] = (unsigned long *)ref_sys_unlink;
+	sys_call_table[__NR_chdir] = (unsigned long *)ref_sys_chdir;
 	sys_call_table[__NR_mknod] =  (unsigned long * ) ref_sys_mknod;
 	sys_call_table[__NR_lchown] =  (unsigned long * ) ref_sys_lchown;
 	sys_call_table[__NR_lseek] =  (unsigned long * ) ref_sys_lseek;
@@ -833,7 +845,7 @@ static void __exit interceptor_end(void)
 	//sys_call_table[__NR_getpid] =  (unsigned long * ) ref_sys_getpid;*/
 	sys_call_table[__NR_manage_sids] =  (unsigned long * ) ref_sys_manage_sids;
 	write_cr0(original_cr0);
-						
+
 	msleep(2000);
 	printk("thesis: exiting interceptor\n");
 }

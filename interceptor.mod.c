@@ -21,21 +21,21 @@ __attribute__((section("__versions"))) = {
 	{ 0xf9a482f9, "msleep" },
 	{ 0xdcb0349b, "sys_close" },
 	{ 0xe2d5255a, "strcmp" },
+	{ 0x27e1a049, "printk" },
 	{ 0xe914e41e, "strcpy" },
 	{ 0x5a34a45c, "__kmalloc" },
 	{ 0x25ec1b28, "strlen" },
 	{ 0x7a22f2bc, "kmem_cache_alloc_trace" },
 	{ 0xb2ac7ac1, "kmalloc_caches" },
 	{ 0x503ef132, "add_sid_with_inode_k" },
+	{ 0xd52bf1ce, "_raw_spin_lock" },
+	{ 0x1e6d26a8, "strstr" },
+	{ 0x152de1e4, "current_task" },
 	{ 0xf0fdf6cb, "__stack_chk_fail" },
 	{ 0x123e7740, "call_usermodehelper_exec" },
 	{ 0xd7511e7d, "call_usermodehelper_setup" },
 	{ 0x291d60bb, "my_char_dev_write_k" },
 	{ 0x91715312, "sprintf" },
-	{ 0x27e1a049, "printk" },
-	{ 0xd52bf1ce, "_raw_spin_lock" },
-	{ 0x1e6d26a8, "strstr" },
-	{ 0x152de1e4, "current_task" },
 	{ 0xb4390f9a, "mcount" },
 };
 
@@ -45,4 +45,4 @@ __attribute__((section(".modinfo"))) =
 "depends=read_inode_list,my_char_dev";
 
 
-MODULE_INFO(srcversion, "CBC2B46DFDAE196C57DE5D4");
+MODULE_INFO(srcversion, "F416B20C742F9A94C621D1E");
